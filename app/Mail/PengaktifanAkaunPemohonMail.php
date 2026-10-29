@@ -18,20 +18,17 @@ class PengaktifanAkaunPemohonMail extends Mailable
     public User $user;
     public string $activationToken;
     public string $activationUrl;
-    public string $temporaryPassword;
 
     public function __construct(
         Application $application,
         User $user,
         string $activationToken,
-        ?string $activationUrl = null,
-        string $temporaryPassword = 'password123'
+        ?string $activationUrl = null
     ) {
         $this->application = $application;
         $this->user = $user;
         $this->activationToken = $activationToken;
         $this->activationUrl = $activationUrl ?: route('account.activate', ['token' => $activationToken]);
-        $this->temporaryPassword = $temporaryPassword;
     }
 
     public function envelope(): Envelope

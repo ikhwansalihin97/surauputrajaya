@@ -41,13 +41,9 @@
                                     <td style="background-color:#f0f7fc; color:#1e3a8a; font-weight:600;">Nama Surau</td>
                                     <td><strong>{{ $application->nama_surau }}</strong></td>
                                 </tr>
-                                <tr style="border-bottom:1px solid #e2e8f0;">
+                                <tr>
                                     <td style="background-color:#f0f7fc; color:#1e3a8a; font-weight:600;">Peranan Sistem</td>
                                     <td><span style="background-color:#dbeafe; color:#1e40af; padding:4px 10px; border-radius:6px; font-weight:700; font-size:12px; border:1px solid #bfdbfe;">Pentadbir Surau</span></td>
-                                </tr>
-                                <tr>
-                                    <td style="background-color:#f0f7fc; color:#1e3a8a; font-weight:600;">Kata Laluan Sementara</td>
-                                    <td><strong style="color:#0f766e; font-family:monospace;">{{ $temporaryPassword ?? 'password123' }}</strong> <span style="font-size:12px; color:#64748b;">(Digunakan untuk log masuk seterusnya)</span></td>
                                 </tr>
                             </table>
 

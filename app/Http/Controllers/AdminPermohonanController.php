@@ -319,7 +319,7 @@ class AdminPermohonanController extends Controller
                     if (!empty($systemAdminEmails)) {
                         $mailAktivasi->bcc($systemAdminEmails);
                     }
-                    $mailAktivasi->send(new PengaktifanAkaunPemohonMail($application, $user, $activationToken, $activationUrl, 'password123'));
+                    $mailAktivasi->send(new PengaktifanAkaunPemohonMail($application, $user, $activationToken, $activationUrl));
 
                     EmailLog::create([
                         'application_id' => $application->id,

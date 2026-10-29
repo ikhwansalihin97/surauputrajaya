@@ -24,6 +24,12 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
 
+            // Akaun belum diaktifkan melalui pautan pengaktifan e-mel
+            if (!empty($user->activation_token)) {
+                Auth::logout();
+                return back()->withErrors(['email' => 'Akaun anda belum diaktifkan. Sila aktifkan akaun melalui pautan pengaktifan yang dihantar ke e-mel anda.']);
+            }
+
             // Tetapkan peranan aktif default (peranan pertama pengguna)
             $firstRole = $user->roles()->first();
             session(['active_role' => $firstRole ? $firstRole->slug : 'user']);
