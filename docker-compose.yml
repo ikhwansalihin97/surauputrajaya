@@ -1,0 +1,59 @@
+# Local development stack. Values under `environment` override .env inside the
+# containers, so .env stays usable for running outside Docker.
+services:
+  app:
+    build: docker/php
+    ports:
+      - "8003:8003"
+    volumes:
+      - .:/var/www/html
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: suraupj
+      DB_USERNAME: suraupj
+      DB_PASSWORD: secret
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: suraupj
+      MYSQL_USER: suraupj
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-psecret"]
+      interval: 5s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+
+  # Frontend assets. `docker compose run --rm node npm run build` for a one-off
+  # build, or `docker compose --profile dev up` to also run the Vite dev server.
+  node:
+    image: node:22
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - node-modules:/var/www/html/node_modules
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    profiles: ["dev"]
+
+volumes:
+  mysql-data:
+  node-modules:

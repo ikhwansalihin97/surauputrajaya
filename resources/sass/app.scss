@@ -1,0 +1,6 @@
+// Import Bootstrap 5
+@use "bootstrap/scss/bootstrap";
+
+// Import FontAwesome 6
+$fa-font-path: "@fortawesome/fontawesome-free/webfonts";
+@import "@fortawesome/fontawesome-free/css/all.css";
