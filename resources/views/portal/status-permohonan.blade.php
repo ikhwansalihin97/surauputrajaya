@@ -363,7 +363,7 @@
                     <span class="badge bg-white text-primary font-monospace px-2.5 py-1 fw-bold" style="font-size:0.75rem;">
                         <i class="fa-solid fa-ticket me-1"></i> {{ $application->reference_no }}
                     </span>
-                    <span class="badge bg-white bg-opacity-20 px-2.5 py-1 text-white" style="font-size:0.72rem;">
+                    <span class="badge bg-white bg-opacity-25 px-2.5 py-1 text-white" style="font-size:0.72rem;">
                         <i class="fa-regular fa-calendar-check me-1"></i> {{ $application->created_at ? $application->created_at->format('d/m/Y h:i A') : '-' }}
                     </span>
                 </div>
