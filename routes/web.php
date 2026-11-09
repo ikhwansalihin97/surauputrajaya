@@ -12,10 +12,12 @@ use App\Http\Controllers\AdminPermohonanController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActivationController;
+use App\Http\Controllers\ProfileController;
 
 use App\Http\Controllers\Masjid\PengesahanController;
 use App\Http\Controllers\Admin\MasjidDashboardController;
 use App\Http\Controllers\Jawi\PengesahanController as JawiPengesahanController;
+use App\Http\Controllers\Surau\KemaskiniController as SurauKemaskiniController;
 
 
 /*
@@ -119,6 +121,67 @@ Route::middleware('auth')->group(function () {
         '/switch-role',
         [AuthController::class, 'switchRole']
     )->name('switch.role');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PROFIL PENGGUNA
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('profil')
+        ->name('profile.')
+        ->group(function () {
+
+            Route::get(
+                '/',
+                [ProfileController::class, 'edit']
+            )->name('edit');
+
+            Route::put(
+                '/',
+                [ProfileController::class, 'update']
+            )->name('update');
+
+            Route::put(
+                '/kata-laluan',
+                [ProfileController::class, 'updatePassword']
+            )->name('password');
+        });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | KEMASKINI MAKLUMAT SURAU (PENTADBIR SURAU)
+    |--------------------------------------------------------------------------
+    | Draf kemaskini tidak mengubah rekod yang telah diluluskan. Ia hanya
+    | menjadi rekod rasmi selepas dihantar & diluluskan semula.
+    */
+
+    Route::prefix('surau/kemaskini')
+        ->name('surau.kemaskini.')
+        ->group(function () {
+
+            Route::post(
+                '/',
+                [SurauKemaskiniController::class, 'start']
+            )->name('start');
+
+            Route::get(
+                '/{id}',
+                [SurauKemaskiniController::class, 'edit']
+            )->name('edit');
+
+            Route::post(
+                '/{id}',
+                [SurauKemaskiniController::class, 'update']
+            )->name('update');
+
+            Route::delete(
+                '/{id}',
+                [SurauKemaskiniController::class, 'destroy']
+            )->name('destroy');
+        });
 
 
     /*

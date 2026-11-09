@@ -424,6 +424,7 @@
                                         {{ $application->reference_no }}
 
                                     </span>
+                                    @include('admin.permohonan._jenis_badge', ['application' => $application])
 
                                 </td>
 

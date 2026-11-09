@@ -6,7 +6,7 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-2">
         <div>
             <h4 class="fw-bold text-dark mb-1">
-                <i class="fa-solid fa-file-invoice me-2 text-primary"></i> Semakan Permohonan: {{ $application->reference_no }}
+                <i class="fa-solid fa-file-invoice me-2 text-primary"></i> Semakan Permohonan: {{ $application->reference_no }} @include('admin.permohonan._jenis_badge', ['application' => $application])
             </h4>
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="badge bg-secondary font-monospace"><i class="fa-solid fa-calendar-days me-1"></i> Tarikh Hantar: {{ $application->created_at->format('d/m/Y h:i A') }}</span>

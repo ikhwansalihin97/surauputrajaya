@@ -21,6 +21,7 @@
                         <i class="fa-solid fa-hashtag me-1"></i>
                         {{ $application->reference_no }}
                     </span>
+                    @include('admin.permohonan._jenis_badge', ['application' => $application])
                 @elseif(!empty($masjid->reference_no))
                     <span class="badge bg-secondary font-monospace">
                         <i class="fa-solid fa-hashtag me-1"></i>

@@ -128,7 +128,7 @@
                                 <td class="ps-3 text-center text-muted small fw-bold">
                                     {{ $applications->firstItem() + $index }}
                                 </td>
-                                <td class="font-monospace fw-bold text-primary">{{ $app->reference_no }}</td>
+                                <td class="font-monospace fw-bold text-primary">{{ $app->reference_no }} @include('admin.permohonan._jenis_badge', ['application' => $app])</td>
                                 <td>
                                     <span class="fw-semibold text-dark">{{ $app->nama_surau }}</span>
                                     <div class="small text-muted">{{ $app->kariah_masjid ?? '-' }}</div>

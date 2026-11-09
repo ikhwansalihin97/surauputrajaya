@@ -193,6 +193,9 @@ class AdminPermohonanController extends Controller
         $zonConfirmation->confirmed_at = now();
         $zonConfirmation->save();
 
+        // Bagi permohonan KEMASKINI: rekod rasmi sebelum kelulusan ini (untuk serahan pentadbir)
+        $previousApproved = $application->isRevision() ? $application->currentApproved() : null;
+
         // 3. Kemaskini status utama Application
         $application->status = $request->status;
         $application->save();
@@ -214,7 +217,12 @@ class AdminPermohonanController extends Controller
 
             $activationToken = Str::random(64);
 
-            if (!$user) {
+            // Akaun yang telah diaktifkan (cth. pentadbir sedia ada dalam kemaskini) tidak perlu diaktifkan semula
+            $alreadyActivated = $user && empty($user->activation_token) && !$user->is_first_login;
+
+            if ($alreadyActivated) {
+                // Tiada perubahan pada akaun; hanya pastikan peranan & pautan permohonan
+            } elseif (!$user) {
                 $user = User::create([
                     'name'                => $application->pemohon_nama,
                     'no_kad_pengenalan'   => $pemohonIc,
@@ -245,6 +253,25 @@ class AdminPermohonanController extends Controller
             // Hubungkan ID pengguna ke dalam permohonan
             $application->user_id = $user->id;
             $application->save();
+
+            // Serahan pentadbir: pentadbir lama kehilangan peranan surau jika tidak lagi mentadbir surau lain
+            $previousAdmin = $previousApproved?->user;
+            if ($previousAdmin && (int) $previousAdmin->id !== (int) $user->id) {
+                $stillAdministers = Application::where('user_id', $previousAdmin->id)
+                    ->where('status', 'APPROVED')
+                    ->get()
+                    ->contains(fn ($app) => (int) $app->currentApproved()?->user_id === (int) $previousAdmin->id);
+
+                if (!$stillAdministers) {
+                    $previousAdmin->roles()->detach($surauRole->id);
+                }
+
+                activity()
+                    ->useLog('permohonan')
+                    ->causedBy(Auth::user())
+                    ->performedOn($application)
+                    ->log("Pentadbiran surau '{$application->nama_surau}' diserahkan daripada '{$previousAdmin->name}' kepada '{$user->name}' melalui kemaskini {$application->reference_no}.");
+            }
 
             // B. Hantar 2 E-mel Rasmi
             if (!empty($pemohonEmail) && filter_var($pemohonEmail, FILTER_VALIDATE_EMAIL)) {
@@ -313,41 +340,46 @@ class AdminPermohonanController extends Controller
                 // 2. E-mel link pengaktifan kepada pemohon, BCC kepada pentadbir sistem
                 // -------------------------------------------------------------
                 $subjectAktivasi = 'Pautan Pengaktifan Akaun Pentadbir Surau - ' . $application->nama_surau;
-                try {
-                    $activationUrl = url('/activate/' . $activationToken);
-                    $mailAktivasi = Mail::to($pemohonEmail);
-                    if (!empty($systemAdminEmails)) {
-                        $mailAktivasi->bcc($systemAdminEmails);
-                    }
-                    $mailAktivasi->send(new PengaktifanAkaunPemohonMail($application, $user, $activationToken, $activationUrl));
+                // Akaun yang telah aktif tidak menerima pautan pengaktifan baharu
+                if (!$alreadyActivated) {
+                    try {
+                        $activationUrl = url('/activate/' . $activationToken);
+                        $mailAktivasi = Mail::to($pemohonEmail);
+                        if (!empty($systemAdminEmails)) {
+                            $mailAktivasi->bcc($systemAdminEmails);
+                        }
+                        $mailAktivasi->send(new PengaktifanAkaunPemohonMail($application, $user, $activationToken, $activationUrl));
 
-                    EmailLog::create([
-                        'application_id' => $application->id,
-                        'mail_type'      => 'PENGAKTIFAN_AKAUN',
-                        'to_email'       => json_encode([$pemohonEmail]),
-                        'cc_email'       => null,
-                        'bcc_email'      => !empty($systemAdminEmails) ? json_encode($systemAdminEmails) : null,
-                        'subject'        => $subjectAktivasi,
-                        'status'         => 'SENT',
-                        'sent_at'        => now(),
-                    ]);
-                } catch (\Exception $e) {
-                    Log::error('Gagal menghantar emel link pengaktifan akaun: ' . $e->getMessage());
-                    EmailLog::create([
-                        'application_id' => $application->id,
-                        'mail_type'      => 'PENGAKTIFAN_AKAUN',
-                        'to_email'       => json_encode([$pemohonEmail]),
-                        'cc_email'       => null,
-                        'bcc_email'      => !empty($systemAdminEmails) ? json_encode($systemAdminEmails) : null,
-                        'subject'        => $subjectAktivasi,
-                        'status'         => 'FAILED',
-                        'error_message'  => $e->getMessage(),
-                    ]);
+                        EmailLog::create([
+                            'application_id' => $application->id,
+                            'mail_type'      => 'PENGAKTIFAN_AKAUN',
+                            'to_email'       => json_encode([$pemohonEmail]),
+                            'cc_email'       => null,
+                            'bcc_email'      => !empty($systemAdminEmails) ? json_encode($systemAdminEmails) : null,
+                            'subject'        => $subjectAktivasi,
+                            'status'         => 'SENT',
+                            'sent_at'        => now(),
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Gagal menghantar emel link pengaktifan akaun: ' . $e->getMessage());
+                        EmailLog::create([
+                            'application_id' => $application->id,
+                            'mail_type'      => 'PENGAKTIFAN_AKAUN',
+                            'to_email'       => json_encode([$pemohonEmail]),
+                            'cc_email'       => null,
+                            'bcc_email'      => !empty($systemAdminEmails) ? json_encode($systemAdminEmails) : null,
+                            'subject'        => $subjectAktivasi,
+                            'status'         => 'FAILED',
+                            'error_message'  => $e->getMessage(),
+                        ]);
+                    }
                 }
             }
 
             return redirect()->route('admin.permohonan.show', $application->id)
-                ->with('success', 'Permohonan telah berjaya DILULUSKAN oleh Pentadbir Zon. Maklumat pemohon telah didaftarkan sebagai pengguna sistem, dan 2 e-mel (Kelulusan & Pautan Pengaktifan) telah dikeluarkan.');
+                ->with('success', $alreadyActivated
+                    ? 'Permohonan telah berjaya DILULUSKAN oleh Pentadbir Zon. E-mel kelulusan telah dihantar kepada Pentadbir Surau.'
+                    : 'Permohonan telah berjaya DILULUSKAN oleh Pentadbir Zon. Maklumat pemohon telah didaftarkan sebagai pengguna sistem, dan 2 e-mel (Kelulusan & Pautan Pengaktifan) telah dikeluarkan.');
         } else {
             // Status REJECTED:
             $pemohonEmail = trim($application->pemohon_email ?? '');

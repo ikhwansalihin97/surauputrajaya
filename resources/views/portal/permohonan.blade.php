@@ -2,6 +2,13 @@
 
 @section('content')
 
+@php
+    // Borang yang sama digunakan untuk kemaskini maklumat surau (draf KEMASKINI)
+    $isRevision = isset($revision) && $revision;
+    $revisionDocs = $isRevision ? $revision->documents->keyBy('jenis_dokumen') : collect();
+    $revisionMinit = $isRevision ? $revision->meetingMinutes->sortByDesc('id')->first() : null;
+@endphp
+
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-11">
@@ -9,9 +16,21 @@
                 
                 <!-- Card Header -->
                 <div class="card-header text-white p-4 text-center position-relative" style="background: linear-gradient(135deg, #1e40af 0%, #0284c7 100%); border-radius: 8px 8px 0 0;">
-                    <h4 class="fw-bold mb-1"><i class="fa-solid fa-file-signature text-white me-2"></i> BORANG PENDAFTARAN SURAU</h4>
+                    @if($isRevision)
+                    <h4 class="fw-bold mb-1"><i class="fa-solid fa-pen-to-square text-white me-2"></i> KEMASKINI MAKLUMAT SURAU</h4>
                     <p class="text-white-50 small mb-2">Jabatan Agama Islam Wilayah Persekutuan (JAWI)</p>
 
+                    <div class="d-inline-flex align-items-center flex-wrap justify-content-center gap-2 mt-2 p-2 rounded" style="background-color: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25);">
+                        <span class="badge bg-warning text-dark py-2 px-3"><i class="fa-solid fa-file-pen me-1"></i> DRAF</span>
+                        <span class="badge bg-white text-primary font-monospace py-2 px-3">{{ $revision->reference_no }}</span>
+                        <span class="small text-white">Dikemaskini: {{ $revision->updated_at?->format('d/m/Y h:i A') }}</span>
+                    </div>
+                    @else
+                    <h4 class="fw-bold mb-1"><i class="fa-solid fa-file-signature text-white me-2"></i> BORANG PENDAFTARAN SURAU</h4>
+                    <p class="text-white-50 small mb-2">Jabatan Agama Islam Wilayah Persekutuan (JAWI)</p>
+                    @endif
+
+                    @unless($isRevision)
                     <!-- Panel Kawalan Draf Mudah -->
                     <div class="d-flex align-items-center justify-content-center gap-2 mt-3 p-2 rounded" style="background-color: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25);">
                         <span id="draftStatusBadge" class="badge bg-white text-dark font-monospace py-2 px-3">
@@ -26,9 +45,23 @@
                             Padam Draf
                         </button>
                     </div>
+                    @endunless
                 </div>
-                
+
                 <div class="card-body p-4">
+                    @if($isRevision)
+                        <div class="alert alert-info d-flex align-items-start gap-2 mb-4 small">
+                            <i class="fa-solid fa-circle-info mt-1"></i>
+                            <div>
+                                Maklumat di bawah diambil daripada rekod rasmi surau yang telah diluluskan
+                                @if($revision->parent)(No. Rujukan asal: <strong class="font-monospace">{{ $revision->parent->reference_no }}</strong>)@endif.
+                                Anda boleh <strong>simpan draf</strong> pada bila-bila masa. Rekod rasmi <strong>tidak akan berubah</strong> sehingga kemaskini ini
+                                <strong>dihantar dan diluluskan</strong> melalui proses pengesahan Pentadbir Masjid, JAWI dan Pentadbir Zon.
+                            </div>
+                        </div>
+                    @endif
+
+
                     @if ($errors->any())
                         <div class="alert alert-danger mb-4" id="serverValidationAlert">
                             <h6 class="fw-bold mb-1"><i class="fa-solid fa-triangle-exclamation me-1"></i> Sila Betulkan Ralat Berikut:</h6>
@@ -40,7 +73,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('permohonan.store') }}" method="POST" enctype="multipart/form-data" id="formPermohonanSurau" novalidate>
+                    <form action="{{ $isRevision ? route('surau.kemaskini.update', $revision->id) : route('permohonan.store') }}" method="POST" enctype="multipart/form-data" id="formPermohonanSurau" novalidate>
                         @csrf
                         
                         <div class="accordion" id="accordionBorangSurau">
@@ -325,7 +358,11 @@
                                     <div class="accordion-body">
                                         <div class="alert alert-warning py-2 small d-flex align-items-center mb-3">
                                             <i class="fa-solid fa-triangle-exclamation fa-lg me-2"></i>
+                                            @if($isRevision)
+                                            <div><strong>PENTING:</strong> Pemohon Utama ialah <strong>Pentadbir Surau</strong>. Jika anda menandakan Ahli Jawatankuasa lain, pentadbiran surau akan <strong>diserahkan kepada individu tersebut</strong> selepas kemaskini ini diluluskan. Individu tersebut akan menerima pautan pengaktifan akaun, dan akaun anda tidak lagi mentadbir surau ini.</div>
+                                            @else
                                             <div><strong>PENTING:</strong> Sila tandakan (Tick) pada **satu sahaja** Ahli Jawatankuasa yang membuat permohonan ini. Pengguna ini akan mendaftar sebagai **Pentadbir Surau** dan menerima link kelulusan e-mel.</div>
+                                            @endif
                                         </div>
 
                                         <div id="containerAJK">
@@ -402,18 +439,41 @@
                                 <div id="sec6" class="accordion-collapse collapse" data-bs-parent="#accordionBorangSurau">
                                     <div class="accordion-body">
                                         <div class="alert alert-info py-2 small mb-3">
-                                            <i class="fa-solid fa-info-circle me-1"></i> Sila muat naik semula dokumen sokongan jika halaman direfresh disebabkan ralat validasi. Maximum saiz fail adalah 5MB.
+                                            @if($isRevision)
+                                                <i class="fa-solid fa-info-circle me-1"></i> Dokumen semasa dikekalkan. Muat naik fail baharu hanya jika ingin menggantikannya. <strong>Minit mesyuarat terkini wajib dimuat naik</strong> sebelum kemaskini dihantar. Maksimum saiz fail adalah 5MB.
+                                            @else
+                                                <i class="fa-solid fa-info-circle me-1"></i> Sila muat naik semula dokumen sokongan jika halaman direfresh disebabkan ralat validasi. Maximum saiz fail adalah 5MB.
+                                            @endif
                                         </div>
-                                        
+
+                                        @php
+                                            // Pautan fail semasa bagi draf kemaskini
+                                            $currentFileNote = function ($doc) {
+                                                if (!$doc) {
+                                                    return '<div class="form-text text-danger">Tiada fail semasa.</div>';
+                                                }
+                                                return '<div class="form-text">Fail semasa: <a href="' . e(asset('storage/' . $doc->fail_path)) . '" target="_blank">'
+                                                    . e($doc->fail_nama_asal ?: basename($doc->fail_path)) . '</a>. Biarkan kosong untuk kekalkan.</div>';
+                                            };
+                                        @endphp
+
                                         <div class="row g-3">
                                             <div class="col-md-6">
                                                 <label class="form-label fw-semibold small">Minit Mesyuarat Terkini (PDF, Maks 5MB)</label>
-                                                <input type="file" name="minit_mesyuarat" class="form-control" accept=".pdf" required>
+                                                <input type="file" name="minit_mesyuarat" class="form-control" accept=".pdf" @unless($isRevision) required @endunless>
+                                                @if($isRevision)
+                                                    @if($revisionMinit)
+                                                        <div class="form-text">Minit untuk kemaskini ini: <a href="{{ asset('storage/' . $revisionMinit->fail_path) }}" target="_blank">{{ basename($revisionMinit->fail_path) }}</a>. Muat naik semula untuk menggantikannya.</div>
+                                                    @else
+                                                        <div class="form-text text-danger">Belum dimuat naik. Wajib sebelum kemaskini dihantar.</div>
+                                                    @endif
+                                                @endif
                                             </div>
 
                                             <div class="col-md-6">
                                                 <label class="form-label fw-semibold small">Surat Pengesahan Arah Kiblat daripada Mufti Wilayah (PDF, Maks 5MB)</label>
-                                                <input type="file" name="pengesahan_kiblat" class="form-control" accept=".pdf" required>
+                                                <input type="file" name="pengesahan_kiblat" class="form-control" accept=".pdf" @unless($isRevision) required @endunless>
+                                                @if($isRevision) {!! $currentFileNote($revisionDocs->get('PENGESAHAN_KIBLAT')) !!} @endif
                                             </div>
 
                                             <div class="col-12 mt-4">
@@ -424,17 +484,20 @@
 
                                             <div class="col-md-4">
                                                 <label class="form-label fw-semibold small">Salinan IC Pengerusi (PDF/JPG/PNG)</label>
-                                                <input type="file" name="ic_pengerusi" class="form-control" accept=".pdf,.png,.jpg,.jpeg" required>
+                                                <input type="file" name="ic_pengerusi" class="form-control" accept=".pdf,.png,.jpg,.jpeg" @unless($isRevision) required @endunless>
+                                                @if($isRevision) {!! $currentFileNote($revisionDocs->get('IC_PENGERUSI')) !!} @endif
                                             </div>
 
                                             <div class="col-md-4">
                                                 <label class="form-label fw-semibold small">Salinan IC Setiausaha (PDF/JPG/PNG)</label>
-                                                <input type="file" name="ic_setiausaha" class="form-control" accept=".pdf,.png,.jpg,.jpeg" required>
+                                                <input type="file" name="ic_setiausaha" class="form-control" accept=".pdf,.png,.jpg,.jpeg" @unless($isRevision) required @endunless>
+                                                @if($isRevision) {!! $currentFileNote($revisionDocs->get('IC_SETIAUSAHA')) !!} @endif
                                             </div>
 
                                             <div class="col-md-4">
                                                 <label class="form-label fw-semibold small">Salinan IC Bendahari (PDF/JPG/PNG)</label>
-                                                <input type="file" name="ic_bendahari" class="form-control" accept=".pdf,.png,.jpg,.jpeg" required>
+                                                <input type="file" name="ic_bendahari" class="form-control" accept=".pdf,.png,.jpg,.jpeg" @unless($isRevision) required @endunless>
+                                                @if($isRevision) {!! $currentFileNote($revisionDocs->get('IC_BENDAHARI')) !!} @endif
                                             </div>
                                         </div>
                                     </div>
@@ -454,7 +517,7 @@
                                             <div class="card-body p-3.5">
                                                 <div class="form-check d-flex align-items-start ps-0">
                                                     <div class="me-3 pt-1">
-                                                        <input class="form-check-input style-check" type="checkbox" name="akuan_pengesahan" id="akuan_pengesahan" style="width: 1.35rem; height: 1.35rem; cursor: pointer;" {{ old('akuan_pengesahan') ? 'checked' : '' }} required>
+                                                        <input class="form-check-input style-check" type="checkbox" name="akuan_pengesahan" id="akuan_pengesahan" style="width: 1.35rem; height: 1.35rem; cursor: pointer;" {{ old('akuan_pengesahan') ? 'checked' : '' }} @unless($isRevision) required @endunless>
                                                     </div>
                                                     <label class="form-check-label text-dark small cursor-pointer user-select-none lh-lg" for="akuan_pengesahan">
                                                         <strong>PENGESAHAN AKUAN:</strong> “Dengan ini saya memperakukan bahawa segala keterangan butir-butir yang dinyatakan adalah benar dan sah, dan saya bersetuju sekiranya didapati salah dan tidak benar oleh pihak Jabatan Agama Islam Wilayah Persekutuan, maka permohonan ini patut ditolak atau dibatalkan pendaftarannya.”
@@ -463,6 +526,21 @@
                                             </div>
                                         </div>
 
+                                        @if($isRevision)
+                                        <div class="d-flex flex-column flex-md-row gap-2">
+                                            <button type="submit" name="action" value="draft" formnovalidate class="btn btn-outline-primary btn-lg fw-bold rounded-2 flex-fill py-2.5">
+                                                <i class="fa-solid fa-floppy-disk me-2"></i> Simpan Draf
+                                            </button>
+                                            <button type="submit" name="action" value="submit" class="btn btn-primary btn-lg fw-bold rounded-2 shadow-sm flex-fill py-2.5" style="background-color: #0284c7; border: 1px solid #0369a1;">
+                                                <i class="fa-solid fa-paper-plane me-2"></i> Hantar Kemaskini untuk Pengesahan
+                                            </button>
+                                        </div>
+                                        <div class="text-center mt-3">
+                                            <button type="submit" form="formBuangDraf" class="btn btn-link btn-sm text-danger text-decoration-none">
+                                                <i class="fa-solid fa-trash me-1"></i> Buang draf ini
+                                            </button>
+                                        </div>
+                                        @else
                                         <div class="card border mb-4 rounded-3">
                                             <div class="card-body p-3">
                                                 <label for="inputCaptcha" class="form-label small fw-semibold text-secondary mb-2">
@@ -484,12 +562,20 @@
                                         <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold rounded-2 shadow-sm py-2.5" style="background-color: #0284c7; border: 1px solid #0369a1;">
                                             <i class="fa-solid fa-paper-plane me-2"></i> Hantar Permohonan Surau
                                         </button>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
 
                         </div>
                     </form>
+
+                    @if($isRevision)
+                        <form id="formBuangDraf" action="{{ route('surau.kemaskini.destroy', $revision->id) }}" method="POST" class="d-none">
+                            @csrf
+                            @method('DELETE')
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
@@ -501,6 +587,8 @@ document.addEventListener('DOMContentLoaded', function () {
     
     const STORAGE_KEY = 'surau_registration_draft_v1';
     const form = document.getElementById('formPermohonanSurau');
+    // Mod kemaskini: draf disimpan di pelayan, bukan localStorage, dan tiada captcha
+    const IS_REVISION = @json($isRevision);
 
     // =========================================================================
     // 0. SEMAKAN RALAT VALIDASI & POP-UP SWEETALERT2
@@ -555,7 +643,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     @endif
 
-    @if (session('success'))
+    @if (session('success') && $isRevision)
+        Swal.fire({
+            title: 'Draf Disimpan',
+            text: @json(session('success')),
+            icon: 'success',
+            confirmButtonColor: '#198754',
+            confirmButtonText: 'OK'
+        });
+    @elseif (session('success'))
         Swal.fire({
             title: 'Berjaya Dihantar!',
             text: "{{ session('success') }} (No. Rujukan: {{ session('reference_no') }})",
@@ -785,7 +881,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 6. AUTO-SAVE & RESTORE DRAF
     // =========================================================================
     function saveDraftData() {
-        if (!form) return;
+        if (!form || IS_REVISION) return;
         const draftObj = {
             timestamp: new Date().toLocaleString('ms-MY'),
             fields: {},
@@ -946,6 +1042,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (form) {
 
         form.addEventListener('submit', function (e) {
+
+            // Simpan draf kemaskini: terus hantar, validasi dibuat di pelayan
+            if (IS_REVISION && e.submitter && e.submitter.value === 'draft') {
+                return;
+            }
 
             // =====================================================
             // 1. SEMAK HTML5 VALIDATION
@@ -1134,6 +1235,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+
+            // Kemaskini: wajib tandakan akuan, tiada captcha (pengguna telah log masuk)
+            if (IS_REVISION) {
+                const akuan = document.getElementById('akuan_pengesahan');
+                if (akuan && !akuan.checked) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Pengesahan Akuan',
+                        text: 'Sila tandakan pengesahan akuan sebelum menghantar kemaskini.',
+                        icon: 'warning',
+                        confirmButtonColor: '#ffc107',
+                        confirmButtonText: 'OK'
+                    });
+                }
+                return;
+            }
 
             // =====================================================
             // 6. SEMAK CAPTCHA
@@ -1447,6 +1564,28 @@ document.addEventListener('DOMContentLoaded', function () {
     //         // Form akan dihantar ke Laravel
     //     });
     // }
+
+    const formBuangDraf = document.getElementById('formBuangDraf');
+    if (formBuangDraf) {
+        formBuangDraf.addEventListener('submit', function (e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Buang Draf Kemaskini?',
+                text: 'Semua perubahan dalam draf ini akan dibuang. Rekod rasmi surau tidak terjejas.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Buang Draf',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    formBuangDraf.submit();
+                }
+            });
+        });
+    }
 
     const checkAkuan = document.getElementById('akuan_pengesahan');
     const cardAkuan = document.getElementById('cardAkuan');

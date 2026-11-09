@@ -104,6 +104,12 @@
                     </li>
 
                     <li>
+                        <a href="{{ route('profile.edit') }}" class="dropdown-item rounded-2 py-2 px-3 d-flex align-items-center gap-2" style="font-size: 0.83rem;">
+                            <i class="fa-solid fa-user-pen text-primary" style="width:16px;"></i> Profil Saya
+                        </a>
+                    </li>
+
+                    <li>
                         <a href="{{ route('portal') }}" class="dropdown-item rounded-2 py-2 px-3 d-flex align-items-center gap-2" style="font-size: 0.83rem;">
                             <i class="fa-solid fa-globe text-primary" style="width:16px;"></i> Portal Awam e-Surau
                         </a>

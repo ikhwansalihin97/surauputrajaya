@@ -230,6 +230,7 @@
                                     <div class="small text-muted font-monospace">
 
                                         {{ $application->reference_no }}
+                                        @include('admin.permohonan._jenis_badge', ['application' => $application])
 
                                     </div>
 

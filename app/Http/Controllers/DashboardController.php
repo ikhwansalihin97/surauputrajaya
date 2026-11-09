@@ -450,13 +450,28 @@ class DashboardController extends Controller
                 } else {
                     // ------------------------------------------------------------------
                     // LOGIK ASAL UNTUK USER SURAU: Ambil 1 permohonan milik mereka sahaja
+                    // Utamakan rekod rasmi (LULUS terkini) yang ditadbir oleh pengguna ini,
+                    // supaya permohonan kemaskini yang belum lulus tidak menggantikannya.
                     // ------------------------------------------------------------------
-                    $application = Application::with([
+                    $relations = [
                         'confirmations', 'masjidConfirmation', 'zonConfirmation',
                         'jawiConfirmation', 'meetingMinutes', 'masjid', 'appointment'
-                    ])
-                    ->where('user_id', $user->id)
-                    ->first();
+                    ];
+
+                    $application = Application::where('user_id', $user->id)
+                        ->where('status', 'APPROVED')
+                        ->orderByDesc('id')
+                        ->get()
+                        ->map(fn ($app) => $app->currentApproved())
+                        ->first(fn ($current) => $current && (int) $current->user_id === (int) $user->id)
+                        ?->load($relations);
+
+                    if (!$application) {
+                        $application = Application::with($relations)
+                            ->where('user_id', $user->id)
+                            ->where('jenis', 'BARU')
+                            ->first();
+                    }
 
                     // Padankan mengikut e-mel atau IC pemohon jika belum dipautkan user_id
                     if (!$application) {
@@ -464,6 +479,7 @@ class DashboardController extends Controller
                             'confirmations', 'masjidConfirmation', 'zonConfirmation',
                             'jawiConfirmation', 'meetingMinutes', 'masjid', 'appointment'
                         ])
+                        ->where('jenis', 'BARU')
                         ->where(function ($q) use ($user) {
                             if ($user->email) {
                                 $q->where('pemohon_email', $user->email);
@@ -485,7 +501,17 @@ class DashboardController extends Controller
                         ? $application->meetingMinutes->sortByDesc('created_at')
                         : collect();
 
-                    return view('dashboard.surau', compact('application', 'applications', 'minitList'));
+                    // Kemaskini maklumat terkini selepas rekod rasmi (DRAF / DALAM PROSES / DITOLAK)
+                    $revision = ($application && $application->status === 'APPROVED')
+                        ? Application::withDrafts()
+                            ->chainOf($application->rootId())
+                            ->where('jenis', 'KEMASKINI')
+                            ->where('id', '>', $application->id)
+                            ->orderByDesc('id')
+                            ->first()
+                        : null;
+
+                    return view('dashboard.surau', compact('application', 'applications', 'minitList', 'revision'));
                 };
 
 

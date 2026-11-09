@@ -16,7 +16,83 @@ class Application extends Model
 
     protected $casts = [
         'sumber_kewangan' => 'array',
+        'submitted_at'    => 'datetime',
     ];
+
+    /**
+     * Draf kemaskini hanya dilihat oleh pentadbir surau yang menyediakannya.
+     * Semua senarai, dashboard & semakan status lain tidak memaparkan DRAFT.
+     * Guna Application::withDrafts() untuk menyertakannya.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('excludeDrafts', function ($query) {
+            $query->where($query->getModel()->getTable() . '.status', '!=', 'DRAFT');
+        });
+    }
+
+    public static function withDrafts()
+    {
+        return static::withoutGlobalScope('excludeDrafts');
+    }
+
+    /**
+     * ============================================================
+     * KEMASKINI MAKLUMAT SURAU (REVISI)
+     * ============================================================
+     * Permohonan BARU ialah rekod asal. Setiap kemaskini ialah permohonan
+     * KEMASKINI baharu dengan parent_id = id permohonan asal, dan melalui
+     * proses pengesahan yang sama. Rekod yang telah diluluskan tidak diubah.
+     */
+    public function isRevision(): bool
+    {
+        return $this->jenis === 'KEMASKINI';
+    }
+
+    public function rootId(): int
+    {
+        return $this->parent_id ?? $this->id;
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Application::class, 'parent_id');
+    }
+
+    /**
+     * Semua permohonan dalam rantaian surau yang sama (asal + kemaskini), termasuk draf.
+     */
+    public function scopeChainOf($query, int $rootId)
+    {
+        return $query->where(function ($q) use ($rootId) {
+            $q->where('applications.id', $rootId)->orWhere('applications.parent_id', $rootId);
+        });
+    }
+
+    /**
+     * Rekod rasmi semasa surau: permohonan LULUS terkini dalam rantaian.
+     * Hanya satu kemaskini boleh dibuka pada satu masa, jadi id terbesar = kelulusan terkini.
+     */
+    public function currentApproved(): ?Application
+    {
+        return static::chainOf($this->rootId())
+            ->where('status', 'APPROVED')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
+     * Kemaskini yang masih dibuka (DRAF / DALAM PROSES) bagi surau ini.
+     */
+    public function openRevision(): ?Application
+    {
+        return static::withDrafts()
+            ->chainOf($this->rootId())
+            ->where('jenis', 'KEMASKINI')
+            ->whereIn('status', ['DRAFT', 'PENDING'])
+            ->orderByDesc('id')
+            ->first();
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

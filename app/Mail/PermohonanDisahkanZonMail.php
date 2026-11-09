@@ -25,7 +25,9 @@ class PermohonanDisahkanZonMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Permohonan Pendaftaran Surau Telah Diluluskan - '
+            subject: ($this->application->isRevision()
+                    ? 'Kemaskini Maklumat Surau Telah Diluluskan - '
+                    : 'Permohonan Pendaftaran Surau Telah Diluluskan - ')
                 . $this->application->reference_no,
         );
     }

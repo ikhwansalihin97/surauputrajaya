@@ -68,6 +68,73 @@
         </div>
     </div>
 
+    {{-- ── Kemaskini Maklumat Surau ── --}}
+    @if(session('kemaskini_success'))
+        <div class="alert alert-success border-0 shadow-sm mb-4 alert-dismissible fade show">
+            <i class="fa-solid fa-circle-check me-2"></i> {{ session('kemaskini_success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if(session('kemaskini_error'))
+        <div class="alert alert-danger border-0 shadow-sm mb-4 alert-dismissible fade show">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ session('kemaskini_error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if($application->status === 'APPROVED' && (int) $application->user_id === (int) auth()->id())
+        @php
+            $revStatus = $revision?->status;
+            [$revColor, $revIcon, $revText] = match($revStatus) {
+                'DRAFT'    => ['#d97706', 'fa-file-pen', 'Draf kemaskini belum dihantar. Rekod rasmi surau tidak berubah sehingga kemaskini dihantar dan diluluskan.'],
+                'PENDING'  => ['#0369a1', 'fa-hourglass-half', 'Kemaskini sedang dalam proses pengesahan Pentadbir Masjid, JAWI dan Pentadbir Zon. Rekod rasmi kekal sehingga ia diluluskan.'],
+                'REJECTED' => ['#dc2626', 'fa-circle-xmark', 'Kemaskini terakhir telah ditolak. Rekod rasmi surau tidak berubah. Anda boleh membuat kemaskini baharu.'],
+                default    => ['#1e40af', 'fa-pen-to-square', 'Kemas kini maklumat surau, jawatankuasa atau dokumen. Perubahan perlu diluluskan semula sebelum menjadi rekod rasmi.'],
+            };
+        @endphp
+        <div class="card border-0 shadow-sm rounded-3 mb-4" style="border-left:4px solid {{ $revColor }} !important;">
+            <div class="card-body p-3 p-md-4 d-flex flex-column flex-md-row align-items-md-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:44px;height:44px;background-color:{{ $revColor }}1a;color:{{ $revColor }};">
+                    <i class="fa-solid {{ $revIcon }}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-bold" style="font-size:0.9rem;color:#0f172a;">
+                        Kemaskini Maklumat Surau
+                        @if($revision)
+                            <span class="badge ms-1 font-monospace" style="background-color:{{ $revColor }}1a;color:{{ $revColor }};border:1px solid {{ $revColor }}40;">{{ $revision->reference_no }}</span>
+                        @endif
+                    </div>
+                    <div class="text-muted small mt-1">{{ $revText }}</div>
+                    @if($revision)
+                        <div class="text-muted mt-1" style="font-size:0.75rem;">
+                            {{ $revStatus === 'DRAFT' ? 'Disimpan' : 'Dihantar' }}:
+                            {{ ($revStatus === 'DRAFT' ? $revision->updated_at : ($revision->submitted_at ?? $revision->updated_at))?->format('d/m/Y h:i A') }}
+                        </div>
+                    @endif
+                </div>
+                <div class="flex-shrink-0">
+                    @if($revStatus === 'DRAFT')
+                        <a href="{{ route('surau.kemaskini.edit', $revision->id) }}" class="btn btn-sm fw-semibold px-3" style="background-color:#d97706;color:#fff;">
+                            <i class="fa-solid fa-pen me-1"></i> Sambung Draf
+                        </a>
+                    @elseif($revStatus === 'PENDING')
+                        <a href="{{ route('permohonan.semak', ['reference_no' => $revision->reference_no]) }}" class="btn btn-sm btn-outline-primary fw-semibold px-3">
+                            <i class="fa-solid fa-magnifying-glass me-1"></i> Semak Status
+                        </a>
+                    @else
+                        <form action="{{ route('surau.kemaskini.start') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-primary fw-semibold px-3">
+                                <i class="fa-solid fa-pen-to-square me-1"></i> Kemaskini Maklumat
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- ── 2. Status Tracker (Horizontal Stepper) ── --}}
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-header bg-white py-3" style="border-bottom:2px solid #eff6ff;">

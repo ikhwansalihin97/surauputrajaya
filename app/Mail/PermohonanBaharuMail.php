@@ -23,7 +23,9 @@ class PermohonanBaharuMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "PERMOHONAN BAHARU: Permohonan Pendaftaran Surau {$this->application->reference_no}",
+            subject: $this->application->isRevision()
+                ? "PERMOHONAN KEMASKINI: Kemaskini Maklumat Surau {$this->application->reference_no}"
+                : "PERMOHONAN BAHARU: Permohonan Pendaftaran Surau {$this->application->reference_no}",
         );
     }
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Permohonan Pendaftaran Surau Baharu</title>
+    <title>{{ $application->isRevision() ? 'Permohonan Kemaskini Maklumat Surau' : 'Permohonan Pendaftaran Surau Baharu' }}</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f0f7fc; font-family:'Segoe UI', Arial, sans-serif; line-height:1.6; color:#334155;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f7fc; padding:30px 10px;">
@@ -14,7 +14,7 @@
                     <tr>
                         <td style="background: linear-gradient(135deg, #1e3a8a 0%, #0369a1 100%); padding:28px 30px; text-align:center; color:#ffffff;">
                             <div style="font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#bfdbfe; margin-bottom:6px;">SISTEM PENGURUSAN E-SURAU JAWI</div>
-                            <h2 style="margin:0; font-size:22px; font-weight:bold; color:#ffffff;">Permohonan Pendaftaran Surau Baharu</h2>
+                            <h2 style="margin:0; font-size:22px; font-weight:bold; color:#ffffff;">{{ $application->isRevision() ? 'Permohonan Kemaskini Maklumat Surau' : 'Permohonan Pendaftaran Surau Baharu' }}</h2>
                             <div style="font-size:13px; margin-top:4px; color:#e0f2fe;">Menunggu Semakan &amp; Pengesahan Pentadbir Masjid</div>
                         </td>
                     </tr>
@@ -24,7 +24,7 @@
                         <td style="padding:30px;">
                             <p style="margin-top:0;">Assalamu'alaikum WBT dan Salam Sejahtera,</p>
                             <p>Tuan/Puan <strong>Pentadbir Masjid / Imam Kariah</strong>,</p>
-                            <p>Dimaklumkan bahawa permohonan pendaftaran surau baharu berikut telah berjaya dihantar oleh pemohon dan kini <strong>memerlukan semakan serta pengesahan</strong> daripada pihak Pentadbir Masjid di bawah kariah anda:</p>
+                            <p>Dimaklumkan bahawa {{ $application->isRevision() ? 'permohonan kemaskini maklumat bagi surau berdaftar' : 'permohonan pendaftaran surau baharu' }} berikut telah berjaya dihantar oleh pemohon dan kini <strong>memerlukan semakan serta pengesahan</strong> daripada pihak Pentadbir Masjid di bawah kariah anda:</p>
 
                             <!-- SUMMARY TABLE -->
                             <table width="100%" cellpadding="10" cellspacing="0" style="border-collapse:collapse; margin:20px 0; font-size:14px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
