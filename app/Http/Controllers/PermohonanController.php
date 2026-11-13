@@ -39,7 +39,12 @@ class PermohonanController extends Controller
             'kategori_surau'    => 'required|string',
             'masjid_id'         => 'required|exists:masjids,id',
             'nama_bank'         => 'required|string',
-            'no_akaun_bank'     => 'required|string',
+            'no_akaun_bank'     => 'required|regex:/^[0-9]+$/|max:30',
+            'no_tel_surau'      => 'nullable|regex:/^[0-9]+$/|max:30',
+            'ajk_ic'            => 'required|array|min:1',
+            'ajk_ic.*'          => 'required|regex:/^[0-9]+$/|max:12',
+            'ajk_tel'           => 'required|array|min:1',
+            'ajk_tel.*'         => 'required|regex:/^[0-9]+$/|max:30',
             'pemohon_index'     => 'required|numeric',
             'minit_mesyuarat'   => 'required|file|mimes:pdf|max:5120',
             'ic_pengerusi'      => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -47,6 +52,11 @@ class PermohonanController extends Controller
             'ic_bendahari'      => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'pengesahan_kiblat' => 'required|file|mimes:pdf|max:5120',
             'akuan_pengesahan'  => 'accepted',
+        ], [
+            'no_akaun_bank.regex' => 'No. akaun bank hanya boleh mengandungi nombor.',
+            'no_tel_surau.regex'  => 'No. telefon surau hanya boleh mengandungi nombor.',
+            'ajk_ic.*.regex'      => 'No. kad pengenalan AJK hanya boleh mengandungi nombor.',
+            'ajk_tel.*.regex'     => 'No. telefon AJK hanya boleh mengandungi nombor.',
         ]);
 
         // 1. Isytiharkan & Ekstrak Data Pemohon Utama SEBELUM DB::transaction

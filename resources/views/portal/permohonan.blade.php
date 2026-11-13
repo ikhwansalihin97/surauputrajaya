@@ -148,7 +148,7 @@
 
                                             <div class="col-md-6">
                                                 <label class="form-label fw-semibold small">No. Telefon Surau (Jika ada)</label>
-                                                <input type="text" name="no_tel_surau" class="form-control" value="{{ old('no_tel_surau') }}">
+                                                <input type="text" name="no_tel_surau" inputmode="numeric" pattern="[0-9]*" data-digits-only class="form-control" value="{{ old('no_tel_surau') }}">
                                             </div>
 
                                             <div class="col-md-6">
@@ -264,7 +264,7 @@
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-semibold small">No Akaun Bank</label>
-                                                <input type="text" name="no_akaun_bank" class="form-control" value="{{ old('no_akaun_bank') }}" placeholder="Cth: 14011010000000" maxlength="14" required>
+                                                <input type="text" name="no_akaun_bank" inputmode="numeric" pattern="[0-9]*" data-digits-only class="form-control" value="{{ old('no_akaun_bank') }}" placeholder="Cth: 14011010000000" maxlength="14" required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-semibold small">Alamat Cawangan Bank</label>
@@ -385,7 +385,7 @@
                                                             </div>
                                                             <div class="col-md-4">
                                                                 <label class="form-label fw-semibold small">No Kad Pengenalan</label>
-                                                                <input type="text" name="ajk_ic[]" value="{{ old('ajk_ic.'.$i) }}" class="form-control form-control-sm" maxlength="12" required>
+                                                                <input type="text" name="ajk_ic[]" inputmode="numeric" pattern="[0-9]*" data-digits-only value="{{ old('ajk_ic.'.$i) }}" class="form-control form-control-sm" maxlength="12" required>
                                                             </div>
                                                             <div class="col-md-4">
                                                                 <label class="form-label fw-semibold small">Jawatan</label>
@@ -402,7 +402,7 @@
                                                             </div>
                                                             <div class="col-md-4">
                                                                 <label class="form-label fw-semibold small">No Telefon</label>
-                                                                <input type="text" name="ajk_tel[]" value="{{ old('ajk_tel.'.$i) }}" class="form-control form-control-sm" required>
+                                                                <input type="text" name="ajk_tel[]" inputmode="numeric" pattern="[0-9]*" data-digits-only value="{{ old('ajk_tel.'.$i) }}" class="form-control form-control-sm" required>
                                                             </div>
                                                             <div class="col-md-4">
                                                                 <label class="form-label fw-semibold small">Alamat E-Mel</label>
@@ -553,7 +553,7 @@
                                                             ↻
                                                         </button>
                                                     </div>
-                                                    <input type="text" name = "captcha" id="inputCaptcha" class="form-control font-monospace fw-bold text-center" style="max-width: 150px; letter-spacing: 2px;" placeholder="Kod 5-Digit" maxlength="5" required>
+                                                    <input type="text" name="captcha" inputmode="numeric" pattern="[0-9]*" data-digits-only id="inputCaptcha" class="form-control font-monospace fw-bold text-center" style="max-width: 150px; letter-spacing: 2px;" placeholder="Kod 5-Digit" maxlength="5" required>
                                                 </div>
                                                 <div id="captchaError" class="text-danger small mt-1 d-none">Kod Captcha yang dimasukkan tidak tepat!</div>
                                             </div>
@@ -589,6 +589,28 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('formPermohonanSurau');
     // Mod kemaskini: draf disimpan di pelayan, bukan localStorage, dan tiada captcha
     const IS_REVISION = @json($isRevision);
+
+    // =========================================================================
+    // MEDAN NOMBOR SAHAJA (No. Telefon, No. K/P, No. Akaun Bank, Captcha)
+    // Dikawal melalui delegasi supaya baris AJK yang ditambah secara dinamik turut terlibat.
+    // =========================================================================
+    const stripNonDigits = (el) => {
+        const cleaned = el.value.replace(/\D+/g, '');
+        if (cleaned !== el.value) el.value = cleaned;
+    };
+    const normaliseDigitFields = () => form.querySelectorAll('[data-digits-only]').forEach(stripNonDigits);
+
+    form.addEventListener('input', (e) => {
+        if (e.target.matches('[data-digits-only]')) stripNonDigits(e.target);
+    });
+    form.addEventListener('keydown', (e) => {
+        if (!e.target.matches('[data-digits-only]')) return;
+        if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+        if (!/\d/.test(e.key)) e.preventDefault();
+    });
+    // Bersihkan nilai sedia ada (cth. data lama dengan tanda '-') sebelum dihantar
+    form.addEventListener('submit', normaliseDigitFields, true);
+    normaliseDigitFields();
 
     // =========================================================================
     // 0. SEMAKAN RALAT VALIDASI & POP-UP SWEETALERT2
@@ -773,7 +795,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">No Kad Pengenalan</label>
-                        <input type="text" name="ajk_ic[]" value="${data.ic || ''}" class="form-control form-control-sm" required>
+                        <input type="text" name="ajk_ic[]" inputmode="numeric" pattern="[0-9]*" data-digits-only value="${data.ic || ''}" class="form-control form-control-sm" maxlength="12" required>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Jawatan</label>
@@ -790,7 +812,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">No Telefon</label>
-                        <input type="text" name="ajk_tel[]" value="${data.tel || ''}" class="form-control form-control-sm" required>
+                        <input type="text" name="ajk_tel[]" inputmode="numeric" pattern="[0-9]*" data-digits-only value="${data.tel || ''}" class="form-control form-control-sm" required>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Alamat E-Mel</label>
@@ -962,6 +984,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ajkCounter = 0;
                 draftObj.ajk_list.forEach(ajkData => tambahAJKCard(ajkData));
             }
+            normaliseDigitFields();
 
             Swal.fire({
                 title: 'Draf Berjaya Diisikan!',
