@@ -42,10 +42,6 @@
                     'label' => 'Pentadbir Masjid',
                     'color' => '#0891b2',
                 ],
-                'zon' => [
-                    'label' => 'Pentadbir Zon',
-                    'color' => '#7c3aed',
-                ],
                 'surau' => [
                     'label' => 'Pentadbir Surau',
                     'color' => '#d97706',
@@ -129,7 +125,6 @@
                                     'admin'  => 'fa-user-shield',
                                     'masjid' => 'fa-mosque',
                                     'jawi'   => 'fa-building-columns',
-                                    'zon'    => 'fa-map-location-dot',
                                     'surau'  => 'fa-kaaba',
                                     default  => 'fa-user-gear'
                                 };

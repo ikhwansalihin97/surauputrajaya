@@ -261,7 +261,7 @@
                 </div>
             </div>
 
-            {{-- Peringkat 3: Pengesahan Zon --}}
+            {{-- Peringkat 3: Lawatan Tapak & Keputusan Akhir --}}
             <div class="col-lg-3 col-sm-6">
                 <div class="p-3 rounded-3 h-100 hover-lift" style="background-color:#f8fafc; border:1px solid #e2e8f0; border-left:4px solid #0284c7 !important;">
                     <div class="d-flex align-items-center justify-content-between mb-1">
@@ -271,10 +271,10 @@
                         <i class="fa-solid fa-map-location-dot text-info opacity-75"></i>
                     </div>
                     <div class="fw-bold text-dark font-monospace" style="font-size:1.45rem;">
-                        {{ $workflowStages['zon'] ?? 0 }}
+                        {{ $workflowStages['lawatan'] ?? 0 }}
                     </div>
-                    <div class="fw-semibold text-dark mt-1" style="font-size:0.8rem;">Pengesahan Pentadbir Zon</div>
-                    <div class="text-muted small" style="font-size:0.72rem;">JAWI telah sahkan, menanti perakuan zon</div>
+                    <div class="fw-semibold text-dark mt-1" style="font-size:0.8rem;">Lawatan Tapak &amp; Keputusan Akhir</div>
+                    <div class="text-muted small" style="font-size:0.72rem;">Temujanji ditetapkan, menanti keputusan akhir JAWI</div>
                 </div>
             </div>
 

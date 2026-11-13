@@ -356,7 +356,7 @@ class PermohonanController extends Controller
         }
 
         return redirect()->route('portal')->with([
-            'success'      => 'Permohonan pendaftaran surau anda telah berjaya dihantar untuk pengesahan Pentadbir Masjid, Pentadbir Zon & semakan JAWI.',
+            'success'      => 'Permohonan pendaftaran surau anda telah berjaya dihantar untuk pengesahan Pentadbir Masjid & semakan JAWI.',
             'reference_no' => $createdData->reference_no
         ]);
     }
@@ -419,7 +419,6 @@ class PermohonanController extends Controller
         |
         | Digunakan untuk:
         |
-        | - Pentadbir Zon
         | - Pentadbir JAWI
         |
         */

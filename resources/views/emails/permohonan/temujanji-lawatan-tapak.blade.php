@@ -15,7 +15,7 @@
                         <td style="background: linear-gradient(135deg, #1e3a8a 0%, #0369a1 100%); padding:28px 30px; text-align:center; color:#ffffff;">
                             <div style="font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#bfdbfe; margin-bottom:6px;">SISTEM PENGURUSAN E-SURAU JAWI</div>
                             <h2 style="margin:0; font-size:22px; font-weight:bold; color:#ffffff;">Temujanji Lawatan Tapak Ditetapkan</h2>
-                            <div style="font-size:13px; margin-top:4px; color:#e0f2fe;">Pemakluman Kepada Pemohon &amp; Pentadbir Zon</div>
+                            <div style="font-size:13px; margin-top:4px; color:#e0f2fe;">Pemakluman Kepada Pemohon</div>
                         </td>
                     </tr>
 
@@ -62,8 +62,7 @@
                             <div style="background-color:#f0f7fc; border-left:4px solid #1e40af; border-top:1px solid #e2e8f0; border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0; padding:16px 18px; margin:20px 0; border-radius:0 8px 8px 0;">
                                 <strong style="color:#1e3a8a; font-size:14px;">Arahan &amp; Tindakan:</strong>
                                 <p style="margin:6px 0 0; font-size:14px; color:#475569;">
-                                    <strong>Pemohon:</strong> Sila bersedia di lokasi temujanji pada tarikh dan masa yang ditetapkan berserta dokumen sokongan yang berkaitan.<br>
-                                    <strong>Pentadbir Zon:</strong> Sila ambil maklum tarikh temujanji ini untuk persediaan pemeriksaan lawatan tapak.
+                                    <strong>Pemohon:</strong> Sila bersedia di lokasi temujanji pada tarikh dan masa yang ditetapkan berserta dokumen sokongan yang berkaitan.
                                 </p>
                             </div>
 

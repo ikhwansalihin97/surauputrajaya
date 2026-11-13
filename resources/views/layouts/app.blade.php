@@ -214,6 +214,17 @@
 
         {{-- Page content --}}
         <main id="app-content">
+            @auth
+                @if(!request()->routeIs('pertukaran-pentadbir.*')
+                    && \App\Models\SurauPertukaranPentadbir::where('kepada_user_id', auth()->id())->aktif()->exists())
+                    <div class="container pt-4 pb-0">
+                        <div class="alert alert-primary border-0 shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
+                            <span><i class="fa-solid fa-user-shield me-2"></i>Anda mempunyai permintaan serah tugas <strong>Pentadbir Surau</strong> yang menunggu tindakan.</span>
+                            <a href="{{ route('pertukaran-pentadbir.index') }}" class="btn btn-sm btn-primary fw-semibold">Lihat &amp; Terima</a>
+                        </div>
+                    </div>
+                @endif
+            @endauth
             @yield('content')
         </main>
 

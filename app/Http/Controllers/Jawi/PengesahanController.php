@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
 use App\Mail\MinitMesyuaratDitolakMail;
-use App\Mail\PermohonanDisahkanJawiMail;
 use App\Mail\PermohonanDitolakJawiMail;
 use App\Mail\TemujanjiLawatanTapakMail;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -406,31 +405,8 @@ class PengesahanController extends Controller
             ? $application->pemohon_email : null;
 
         if ($status === 'APPROVED') {
-            $zonEmails = User::whereHas('roles', function ($query) {
-                $query->where('slug', 'zon');
-            })
-                ->where('is_active', true)
-                ->whereNotNull('email')
-                ->pluck('email')
-                ->filter(fn($email) => filter_var($email, FILTER_VALIDATE_EMAIL))
-                ->unique()->values()->toArray();
-
-            $ccEmails = $adminEmails;
-            if ($pemohonEmail) { $ccEmails[] = $pemohonEmail; }
-            $ccEmails = collect($ccEmails)->filter()->unique()->values()->toArray();
-            $subject = 'Permohonan Menunggu Semakan Pentadbir Zon - ' . $application->reference_no;
-
-            try {
-                if (!empty($zonEmails)) {
-                    $mail = Mail::to($zonEmails);
-                    if (!empty($ccEmails)) { $mail->cc($ccEmails); }
-                    $mail->send(new PermohonanDisahkanJawiMail($application));
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Gagal hantar email JAWI Lulus: ' . $e->getMessage());
-            }
-
-            $mesej = 'Permohonan telah disahkan di peringkat JAWI. E-mel pemakluman telah dihantar kepada Pentadbir Zon untuk tindakan selanjutnya.';
+            // Langkah seterusnya: temujanji lawatan tapak & keputusan akhir oleh Pentadbir JAWI.
+            $mesej = 'Permohonan telah disahkan di peringkat JAWI. Sila tetapkan temujanji lawatan tapak dan buat keputusan akhir selepas lawatan.';
         } else {
             $subject = 'Permohonan Ditolak di Peringkat JAWI - ' . $application->reference_no;
             try {
@@ -590,6 +566,70 @@ class PengesahanController extends Controller
 
     /**
      * ============================================================
+     * 5B. KEPUTUSAN AKHIR SELEPAS LAWATAN TAPAK (oleh Pentadbir JAWI)
+     * ============================================================
+     *
+     * Menggantikan peranan Pentadbir Zon: selepas lawatan tapak,
+     * Pentadbir JAWI terus meluluskan / menolak permohonan.
+     *
+     * - Rekod pengesahan peringkat JAWI disimpan bersama keputusan.
+     * - Minit mesyuarat yang masih dalam semakan disahkan sekali
+     *   (langkah Sahkan Minit tidak lagi dipaparkan kepada JAWI).
+     * - Tindakan kelulusan (daftar pengguna, e-mel) dilaksanakan oleh
+     *   AdminPermohonanController::updateStatus supaya logik kekal satu.
+     */
+    public function keputusanAkhir(Request $request, $id)
+    {
+        $request->validate([
+            'status'             => 'required|in:APPROVED,REJECTED',
+            'catatan_zon'        => 'nullable|string',
+            'pengesahan_lawatan' => 'required_if:status,APPROVED|accepted_if:status,APPROVED',
+        ], [
+            'pengesahan_lawatan.*' => 'Sila sahkan bahawa lawatan tapak telah selesai dijalankan.',
+        ]);
+
+        $application = Application::with(['appointments', 'meetingMinutes', 'zonConfirmation'])->findOrFail($id);
+
+        if (in_array($application->zonConfirmation?->status, ['APPROVED', 'REJECTED'])) {
+            return back()->with('error', 'Keputusan akhir bagi permohonan ini telah disimpan.');
+        }
+
+        if ($application->appointments->isEmpty()) {
+            return back()->with('error', 'Sila tetapkan temujanji lawatan tapak terlebih dahulu.');
+        }
+
+        $catatan = trim($request->catatan_zon ?? '');
+
+        if ($request->status === 'APPROVED') {
+            $application->meetingMinutes()
+                ->whereIn('status_pengesahan', ['DALAM_SEMAKAN', 'PENDING'])
+                ->update([
+                    'status_pengesahan' => 'DISAHKAN',
+                    'catatan_semakan'   => 'Disahkan bersama keputusan akhir Pentadbir JAWI selepas lawatan tapak.',
+                    'tarikh_disahkan'   => now(),
+                ]);
+        }
+
+        ApplicationConfirmation::updateOrCreate(
+            ['application_id' => $application->id, 'peringkat' => 'JAWI'],
+            [
+                'status'       => $request->status,
+                'confirmed_by' => Auth::id(),
+                'catatan'      => $catatan,
+                'confirmed_at' => now(),
+            ]
+        );
+
+        // Logik kelulusan sedia ada (rekod ZON, status permohonan, daftar pengguna, e-mel)
+        app(\App\Http\Controllers\AdminPermohonanController::class)->updateStatus($request, $id);
+
+        // Mesej kejayaan / ralat telah di-flash; kekal di halaman JAWI
+        return redirect()->route('admin.jawi.pengesahan.show', $id);
+    }
+
+
+    /**
+     * ============================================================
      * 6. TETAPKAN / KEMASKINI TEMUJANJI LAWATAN TAPAK
      * ============================================================
      */
@@ -608,7 +648,7 @@ class PengesahanController extends Controller
         |--------------------------------------------------------------------------
         | SEMAKAN PENGESAHAN ZON
         |--------------------------------------------------------------------------
-        | Selagi pentadbir zon belum buat apa-apa pengesahan (APPROVED / REJECTED),
+        | Selagi keputusan akhir belum dibuat (APPROVED / REJECTED),
         | pentadbir JAWI boleh menetapkan/kemaskini temujanji baru.
         |
         */
@@ -616,7 +656,7 @@ class PengesahanController extends Controller
         if ($zonConfirmation && in_array($zonConfirmation->status, ['APPROVED', 'REJECTED'])) {
             return back()->with(
                 'error',
-                'Temujanji tidak boleh diubah kerana Pentadbir Zon telah membuat pengesahan permohonan ini.'
+                'Temujanji tidak boleh diubah kerana keputusan akhir permohonan ini telah dibuat.'
             );
         }
 
@@ -638,26 +678,14 @@ class PengesahanController extends Controller
         |--------------------------------------------------------------------------
         | HANTAR EMAIL PEMAKLUMAN TEMUJANJI
         |--------------------------------------------------------------------------
-        | TO : Pemohon & Pentadbir Zon
+        | TO : Pemohon
         | CC : Pentadbir Sistem & Pentadbir JAWI
         |
         */
         $pemohonEmail = (!empty($application->pemohon_email) && filter_var($application->pemohon_email, FILTER_VALIDATE_EMAIL))
             ? $application->pemohon_email : null;
 
-        $zonEmails = User::whereHas('roles', function ($q) {
-            $q->where('slug', 'zon');
-        })
-            ->where('is_active', true)
-            ->whereNotNull('email')
-            ->pluck('email')
-            ->filter(fn($e) => filter_var($e, FILTER_VALIDATE_EMAIL))
-            ->unique()->values()->toArray();
-
-        $toEmails = array_values(array_unique(array_filter(array_merge(
-            $pemohonEmail ? [$pemohonEmail] : [],
-            $zonEmails
-        ))));
+        $toEmails = $pemohonEmail ? [$pemohonEmail] : [];
 
         $adminEmails = User::whereHas('roles', function ($q) {
             $q->where('slug', 'admin');
@@ -700,7 +728,7 @@ class PengesahanController extends Controller
 
         return back()->with(
             'success',
-            'Temujanji lawatan tapak telah berjaya ditetapkan! E-mel pemakluman telah dihantar kepada Pemohon, Pentadbir Zon, Pentadbir Sistem, dan Pentadbir JAWI.'
+            'Temujanji lawatan tapak telah berjaya ditetapkan! E-mel pemakluman telah dihantar kepada Pemohon, Pentadbir Sistem, dan Pentadbir JAWI.'
         );
     }
 }

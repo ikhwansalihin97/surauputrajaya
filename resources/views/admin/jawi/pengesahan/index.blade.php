@@ -192,7 +192,7 @@
                             </th>
 
                             <th class="text-center">
-                                Zon
+                                Keputusan Akhir
                             </th>
 
                             <th class="text-center">

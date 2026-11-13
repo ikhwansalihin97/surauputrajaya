@@ -56,7 +56,7 @@
                                 Maklumat di bawah diambil daripada rekod rasmi surau yang telah diluluskan
                                 @if($revision->parent)(No. Rujukan asal: <strong class="font-monospace">{{ $revision->parent->reference_no }}</strong>)@endif.
                                 Anda boleh <strong>simpan draf</strong> pada bila-bila masa. Rekod rasmi <strong>tidak akan berubah</strong> sehingga kemaskini ini
-                                <strong>dihantar dan diluluskan</strong> melalui proses pengesahan Pentadbir Masjid, JAWI dan Pentadbir Zon.
+                                <strong>dihantar dan diluluskan</strong> melalui proses pengesahan Pentadbir Masjid dan JAWI.
                             </div>
                         </div>
                     @endif
@@ -391,6 +391,7 @@
                                                                 <label class="form-label fw-semibold small">Jawatan</label>
                                                                 <select name="ajk_jawatan[]" class="form-select form-select-sm" required>
                                                                     <option value="Pengerusi" {{ old('ajk_jawatan.'.$i) == 'Pengerusi' ? 'selected' : '' }}>Pengerusi</option>
+                                                                    <option value="Timbalan Pengerusi" {{ old('ajk_jawatan.'.$i) == 'Timbalan Pengerusi' ? 'selected' : '' }}>Timbalan Pengerusi</option>
                                                                     <option value="Setiausaha" {{ old('ajk_jawatan.'.$i) == 'Setiausaha' ? 'selected' : '' }}>Setiausaha</option>
                                                                     <option value="Bendahari" {{ old('ajk_jawatan.'.$i) == 'Bendahari' ? 'selected' : '' }}>Bendahari</option>
                                                                     <option value="AJK" {{ old('ajk_jawatan.'.$i) == 'AJK' ? 'selected' : '' }}>AJK</option>
@@ -801,6 +802,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <label class="form-label fw-semibold small">Jawatan</label>
                         <select name="ajk_jawatan[]" class="form-select form-select-sm" required>
                             <option value="Pengerusi" ${data.jawatan === 'Pengerusi' ? 'selected' : ''}>Pengerusi</option>
+                            <option value="Timbalan Pengerusi" ${data.jawatan === 'Timbalan Pengerusi' ? 'selected' : ''}>Timbalan Pengerusi</option>
                             <option value="Setiausaha" ${data.jawatan === 'Setiausaha' ? 'selected' : ''}>Setiausaha</option>
                             <option value="Bendahari" ${data.jawatan === 'Bendahari' ? 'selected' : ''}>Bendahari</option>
                             <option value="AJK" ${data.jawatan === 'AJK' ? 'selected' : ''}>AJK</option>

@@ -112,6 +112,25 @@ class User extends Authenticatable
      * ROLE
      * ============================================================
      */
+    /**
+     * Surau yang ditadbir oleh pengguna ini (seorang pengguna boleh mentadbir beberapa surau).
+     */
+    public function suraus()
+    {
+        return $this->hasMany(Surau::class)->orderBy('nama_surau');
+    }
+
+    /**
+     * Surau yang sedang dipilih (sesi 'active_surau_id'), atau surau pertama jika tiada pilihan.
+     */
+    public function activeSurau(): ?Surau
+    {
+        $suraus = $this->suraus()->with('masjid')->get();
+
+        return $suraus->firstWhere('id', (int) session('active_surau_id'))
+            ?? $suraus->first();
+    }
+
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(

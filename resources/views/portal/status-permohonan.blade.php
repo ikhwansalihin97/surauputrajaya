@@ -424,7 +424,7 @@
             </div>
             <div class="row text-center g-2">
                 <!-- STEP 1: Permohonan Dihantar -->
-                <div class="col-3">
+                <div class="col-4">
                     <div class="p-2 border rounded-2 bg-white h-100 stepper-card-item border-top border-3" style="border-top-color: #0284c7 !important;">
                         <div class="stepper-node text-white shadow-sm" style="background-color: #0284c7;">
                             <i class="fa-solid fa-file-signature"></i>
@@ -436,7 +436,7 @@
                 </div>
 
                 <!-- STEP 2: Masjid Kariah -->
-                <div class="col-3">
+                <div class="col-4">
                     <div class="p-2 border rounded-2 bg-white h-100 stepper-card-item border-top border-3 {{ $masjidLulus ? 'border-success' : ($masjidDitolak ? 'border-danger' : '') }}" style="{{ !$masjidLulus && !$masjidDitolak ? 'border-top-color: #0284c7 !important;' : '' }}">
                         <div class="stepper-node {{ $masjidLulus ? 'bg-success text-white' : ($masjidDitolak ? 'bg-danger text-white' : 'text-white') }} shadow-sm" style="{{ !$masjidLulus && !$masjidDitolak ? 'background-color: #0284c7;' : '' }}">
                             <i class="fa-solid {{ $masjidLulus ? 'fa-check' : ($masjidDitolak ? 'fa-xmark' : 'fa-mosque') }}"></i>
@@ -453,37 +453,21 @@
                     </div>
                 </div>
 
-                <!-- STEP 3: JAWI & Minit -->
-                <div class="col-3">
-                    <div class="p-2 border rounded-2 bg-white h-100 stepper-card-item border-top border-3 {{ $jawiLulus ? 'border-success' : ($isMinitDitolak || $jawiDitolak ? 'border-danger' : 'border-secondary') }}">
-                        <div class="stepper-node {{ $jawiLulus ? 'bg-success text-white' : ($isMinitDitolak || $jawiDitolak ? 'bg-danger text-white' : 'bg-secondary text-white') }} shadow-sm">
-                            <i class="fa-solid {{ $jawiLulus ? 'fa-check' : ($isMinitDitolak ? 'fa-file-circle-xmark' : ($jawiDitolak ? 'fa-xmark' : 'fa-building-columns')) }}"></i>
+                <!-- STEP 3: Semakan JAWI (Semakan & Keputusan Akhir Pentadbir JAWI) -->
+                @php
+                    $semakanJawiLulus   = $zonLulus;
+                    $semakanJawiDitolak = $isMinitDitolak || $jawiDitolak || $zonDitolak;
+                @endphp
+                <div class="col-4">
+                    <div class="p-2 border rounded-2 bg-white h-100 stepper-card-item border-top border-3 {{ $semakanJawiLulus ? 'border-success' : ($semakanJawiDitolak ? 'border-danger' : 'border-secondary') }}">
+                        <div class="stepper-node {{ $semakanJawiLulus ? 'bg-success text-white' : ($semakanJawiDitolak ? 'bg-danger text-white' : 'bg-secondary text-white') }} shadow-sm">
+                            <i class="fa-solid {{ $semakanJawiLulus ? 'fa-award' : ($isMinitDitolak ? 'fa-file-circle-xmark' : ($semakanJawiDitolak ? 'fa-xmark' : 'fa-building-columns')) }}"></i>
                         </div>
                         <div class="fw-bold stepper-title text-dark">3. Semakan JAWI</div>
-                        <small class="text-muted d-block d-print-none" style="font-size: 0.70rem;">Dokumen &amp; Minit</small>
-                        @if($jawiLulus)
-                            <span class="badge bg-success text-white stepper-badge"><i class="fa-solid fa-check"></i> DISAHKAN</span>
-                        @elseif($isMinitDitolak)
-                            <span class="badge bg-danger text-white stepper-badge"><i class="fa-solid fa-xmark"></i> DITOLAK</span>
-                        @elseif($jawiDitolak)
-                            <span class="badge bg-danger text-white stepper-badge"><i class="fa-solid fa-xmark"></i> DITOLAK</span>
-                        @else
-                            <span class="badge bg-secondary text-white stepper-badge"><i class="fa-solid fa-clock"></i> MENUNGGU</span>
-                        @endif
-                    </div>
-                </div>
-
-                <!-- STEP 4: Pentadbir Zon -->
-                <div class="col-3">
-                    <div class="p-2 border rounded-2 bg-white h-100 stepper-card-item border-top border-3 {{ $zonLulus ? 'border-success' : ($zonDitolak ? 'border-danger' : 'border-secondary') }}">
-                        <div class="stepper-node {{ $zonLulus ? 'bg-success text-white' : ($zonDitolak ? 'bg-danger text-white' : 'bg-secondary text-white') }} shadow-sm">
-                            <i class="fa-solid {{ $zonLulus ? 'fa-award' : ($zonDitolak ? 'fa-xmark' : 'fa-map-location-dot') }}"></i>
-                        </div>
-                        <div class="fw-bold stepper-title text-dark">4. Kelulusan Zon</div>
                         <small class="text-muted d-block d-print-none" style="font-size: 0.70rem;">Kelulusan Akhir</small>
-                        @if($zonLulus)
+                        @if($semakanJawiLulus)
                             <span class="badge bg-success text-white stepper-badge"><i class="fa-solid fa-check"></i> DILULUSKAN</span>
-                        @elseif($zonDitolak)
+                        @elseif($semakanJawiDitolak)
                             <span class="badge bg-danger text-white stepper-badge"><i class="fa-solid fa-xmark"></i> DITOLAK</span>
                         @else
                             <span class="badge bg-secondary text-white stepper-badge"><i class="fa-solid fa-clock"></i> MENUNGGU</span>

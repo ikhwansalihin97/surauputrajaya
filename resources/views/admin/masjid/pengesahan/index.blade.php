@@ -345,7 +345,7 @@
                                     } elseif ($masjidConfirmation->status === 'APPROVED') {
 
                                         $statusSemasa = 'PENDING';
-                                        $peringkatSemasa = 'PENTADBIR ZON';
+                                        $peringkatSemasa = 'KEPUTUSAN AKHIR JAWI';
 
                                     }
 
@@ -366,7 +366,7 @@
                                     if ($zonConfirmation->status === 'REJECTED') {
 
                                         $statusSemasa = 'REJECTED';
-                                        $peringkatSemasa = 'PENTADBIR ZON';
+                                        $peringkatSemasa = 'KEPUTUSAN AKHIR JAWI';
 
                                     } elseif ($zonConfirmation->status === 'APPROVED') {
 

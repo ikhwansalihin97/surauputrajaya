@@ -2,7 +2,96 @@
 
 @section('content')
 
-@if(!$application)
+@if(!$application && isset($surau) && $surau)
+    {{-- ── Surau Sedia Ada (didaftarkan oleh JAWI, tiada permohonan) ── --}}
+    @php
+        $surau->loadCount('committees');
+        $wajib = ['alamat_surau', 'alamat_surat', 'kawasan_surau', 'taraf_tapak', 'jenis_bangunan', 'tingkat_bangunan', 'tahun_didirikan', 'nama_bank', 'no_akaun_bank', 'penama_akaun'];
+        $maklumatLengkap = collect($wajib)->every(fn ($f) => filled($surau->{$f}));
+        $ajkLengkap = $surau->committees_count > 0;
+        $sesiSemasa = $surau->sesiSemasa();
+    @endphp
+
+    @include('surau._pemilih')
+
+    @if(session('success'))
+        <div class="alert alert-success border-0 shadow-sm mb-4 alert-dismissible fade show">
+            <i class="fa-solid fa-circle-check me-2"></i> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    <div class="hero-welcome-card p-4 mb-4 shadow-sm">
+        <div class="hero-shape-1"></div>
+        <div class="hero-shape-2"></div>
+        <div class="position-relative">
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                <span class="badge bg-white bg-opacity-25 px-2.5 py-1 text-white fw-semibold" style="font-size:0.72rem; letter-spacing:0.04em;">
+                    <i class="fa-solid fa-kaaba me-1"></i> DASHBOARD PENTADBIR SURAU
+                </span>
+                <span class="badge bg-white text-success px-2.5 py-1 fw-bold" style="font-size:0.72rem;">
+                    <i class="fa-solid fa-circle-check me-1"></i> SURAU BERDAFTAR
+                </span>
+            </div>
+            <h4 class="fw-bold text-white mb-1">{{ $surau->nama_surau }}</h4>
+            <div class="text-white-50 small mt-1">
+                No. Rujukan JAWI: <strong class="text-white font-monospace">{{ $surau->no_rujukan_jawi ?? '-' }}</strong>
+                &nbsp;&bull;&nbsp; {{ $surau->kategori_surau }}
+                &nbsp;&bull;&nbsp; Kariah: <strong class="text-white">{{ $surau->masjid?->nama_masjid ?? '-' }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left:4px solid {{ $sesiSemasa ? '#16a34a' : '#d97706' }} !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="fw-bold"><i class="fa-solid fa-people-roof me-2 text-primary"></i>Mesyuarat Agung Tahunan</div>
+                        <span class="badge {{ $sesiSemasa ? 'bg-success' : 'bg-warning text-dark' }}">{{ $sesiSemasa ? 'SESI ' . $sesiSemasa->label : 'BELUM DIREKOD' }}</span>
+                    </div>
+                    <p class="small text-muted mb-3">Rekod sesi AGM (cth. 2026/2027) beserta tarikh, masa dan lokasi Mesyuarat Bil. 1 dan Bil. 2.</p>
+                    <a href="{{ route('surau.agm.index') }}" class="btn btn-sm btn-primary fw-semibold">
+                        <i class="fa-solid fa-calendar-days me-1"></i> {{ $sesiSemasa ? 'Urus' : 'Rekod' }} Mesyuarat AGM
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left:4px solid {{ $maklumatLengkap ? '#16a34a' : '#d97706' }} !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="fw-bold"><i class="fa-solid fa-circle-info me-2 text-primary"></i>Maklumat Surau</div>
+                        <span class="badge {{ $maklumatLengkap ? 'bg-success' : 'bg-warning text-dark' }}">{{ $maklumatLengkap ? 'LENGKAP' : 'BELUM LENGKAP' }}</span>
+                    </div>
+                    <p class="small text-muted mb-3">Alamat, tapak &amp; bangunan, maklumat bank, sumber kewangan, penduduk dan aktiviti surau.</p>
+                    <a href="{{ route('surau.maklumat.edit') }}" class="btn btn-sm btn-primary fw-semibold">
+                        <i class="fa-solid fa-pen-to-square me-1"></i> {{ $maklumatLengkap ? 'Kemaskini' : 'Lengkapkan' }} Maklumat Surau
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left:4px solid {{ $ajkLengkap ? '#16a34a' : '#d97706' }} !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="fw-bold"><i class="fa-solid fa-users me-2 text-primary"></i>Maklumat Jawatankuasa</div>
+                        <span class="badge {{ $ajkLengkap ? 'bg-success' : 'bg-warning text-dark' }}">{{ $ajkLengkap ? $surau->committees_count . ' AJK' : 'BELUM DIISI' }}</span>
+                    </div>
+                    <p class="small text-muted mb-3">Senarai Ahli Jawatankuasa surau: Pengerusi, Timbalan Pengerusi, Setiausaha, Bendahari dan AJK (sehingga 8 orang).</p>
+                    @if($sesiSemasa)
+                        <a href="{{ route('surau.jawatankuasa.edit') }}" class="btn btn-sm btn-primary fw-semibold">
+                            <i class="fa-solid fa-users me-1"></i> {{ $ajkLengkap ? 'Kemaskini' : 'Isi' }} Senarai AJK
+                        </a>
+                    @else
+                        <div class="small text-muted"><i class="fa-solid fa-lock me-1"></i> Rekod Mesyuarat AGM terlebih dahulu.</div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+@elseif(!$application)
     {{-- ── Tiada Permohonan ── --}}
     <div class="d-flex align-items-center justify-content-center" style="min-height: 60vh;">
         <div class="card border-0 shadow-sm rounded-3 text-center p-5 hover-lift" style="max-width:540px;width:100%;border-top:4px solid #d97706 !important;">
@@ -29,6 +118,8 @@
     </div>
 
 @else
+    @include('surau._pemilih')
+
     {{-- ── 1. Hero Welcome Banner Surau ── --}}
     @php
         $finalStatus = $application->status ?? 'PENDING';
@@ -52,14 +143,25 @@
                         <i class="fa-solid fa-calendar-day me-1"></i> {{ now()->translatedFormat('l, d F Y') }}
                     </span>
                 </div>
-                <h4 class="fw-bold text-white mb-1">{{ $application->nama_surau }}</h4>
+                <h4 class="fw-bold text-white mb-1">{{ $surau?->nama_surau ?? $application->nama_surau }}</h4>
                 <div class="text-white-50 small mt-1">
                     No. Rujukan: <strong class="text-white font-monospace">{{ $application->reference_no }}</strong>
                     &nbsp;&bull;&nbsp;
-                    Kariah: <strong class="text-white">{{ $application->masjid?->nama_masjid ?? $application->kariah_masjid ?? '-' }}</strong>
+                    Kariah: <strong class="text-white">{{ $surau?->masjid?->nama_masjid ?? $application->masjid?->nama_masjid ?? $application->kariah_masjid ?? '-' }}</strong>
                 </div>
             </div>
             <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                @if(isset($surau) && $surau)
+                    <a href="{{ route('surau.maklumat.edit') }}" class="btn btn-sm btn-light fw-semibold shadow-sm me-1 mb-2 mb-lg-0">
+                        <i class="fa-solid fa-pen-to-square me-1"></i> Kemaskini Maklumat Surau
+                    </a>
+                    <a href="{{ route('surau.agm.index') }}" class="btn btn-sm btn-light fw-semibold shadow-sm me-1 mb-2 mb-lg-0">
+                        <i class="fa-solid fa-people-roof me-1"></i> Mesyuarat AGM
+                    </a>
+                    <a href="{{ route('surau.jawatankuasa.edit') }}" class="btn btn-sm btn-light fw-semibold shadow-sm me-1 mb-2 mb-lg-0">
+                        <i class="fa-solid fa-users me-1"></i> Maklumat AJK
+                    </a>
+                @endif
                 <span class="badge fw-bold px-3 py-2 shadow-sm rounded-2"
                       style="background-color:{{ $hdrBg }};color:{{ $hdrColor }};border:1px solid {{ $hdrColor }}40;font-size:0.83rem;letter-spacing:0.05em;">
                     <i class="fa-solid {{ $hdrIcon }} me-1"></i> {{ $hdrLabel }}
@@ -87,9 +189,9 @@
             $revStatus = $revision?->status;
             [$revColor, $revIcon, $revText] = match($revStatus) {
                 'DRAFT'    => ['#d97706', 'fa-file-pen', 'Draf kemaskini belum dihantar. Rekod rasmi surau tidak berubah sehingga kemaskini dihantar dan diluluskan.'],
-                'PENDING'  => ['#0369a1', 'fa-hourglass-half', 'Kemaskini sedang dalam proses pengesahan Pentadbir Masjid, JAWI dan Pentadbir Zon. Rekod rasmi kekal sehingga ia diluluskan.'],
+                'PENDING'  => ['#0369a1', 'fa-hourglass-half', 'Kemaskini sedang dalam proses pengesahan Pentadbir Masjid dan JAWI. Rekod rasmi kekal sehingga ia diluluskan.'],
                 'REJECTED' => ['#dc2626', 'fa-circle-xmark', 'Kemaskini terakhir telah ditolak. Rekod rasmi surau tidak berubah. Anda boleh membuat kemaskini baharu.'],
-                default    => ['#1e40af', 'fa-pen-to-square', 'Kemas kini maklumat surau, jawatankuasa atau dokumen. Perubahan perlu diluluskan semula sebelum menjadi rekod rasmi.'],
+                default    => ['#1e40af', 'fa-pen-to-square', 'Tukar Pentadbir Surau atau kemaskini dokumen. Perubahan ini perlu diluluskan semula. Maklumat surau dan senarai AJK boleh dikemaskini terus melalui menu Kemaskini Maklumat Surau dan Maklumat Jawatankuasa.'],
             };
         @endphp
         <div class="card border-0 shadow-sm rounded-3 mb-4" style="border-left:4px solid {{ $revColor }} !important;">
@@ -100,7 +202,7 @@
                 </div>
                 <div class="flex-grow-1">
                     <div class="fw-bold" style="font-size:0.9rem;color:#0f172a;">
-                        Kemaskini Maklumat Surau
+                        Kemaskini AJK &amp; Pentadbir Surau
                         @if($revision)
                             <span class="badge ms-1 font-monospace" style="background-color:{{ $revColor }}1a;color:{{ $revColor }};border:1px solid {{ $revColor }}40;">{{ $revision->reference_no }}</span>
                         @endif
@@ -177,20 +279,11 @@
                     [
                         'num'     => 3,
                         'label'   => 'Semakan JAWI',
-                        'sub'     => 'Dokumen & Minit AGM',
-                        'done'    => $isJawiOk,
-                        'error'   => $isJawiErr,
-                        'badge'   => $isJawiOk ? 'DISAHKAN' : ($isJawiErr ? 'DITOLAK' : 'MENUNGGU'),
-                        'badgeBg' => $isJawiOk ? '#16a34a' : ($isJawiErr ? '#dc2626' : '#94a3b8'),
-                    ],
-                    [
-                        'num'     => 4,
-                        'label'   => 'Pengesahan Zon',
-                        'sub'     => 'Pusat Zon',
+                        'sub'     => 'Kelulusan Akhir',
                         'done'    => $isZonOk,
-                        'error'   => $isZonErr,
-                        'badge'   => $isZonOk ? 'DISAHKAN' : ($isZonErr ? 'DITOLAK' : 'MENUNGGU'),
-                        'badgeBg' => $isZonOk ? '#16a34a' : ($isZonErr ? '#dc2626' : '#94a3b8'),
+                        'error'   => $isJawiErr || $isZonErr,
+                        'badge'   => $isZonOk ? 'DILULUSKAN' : (($isJawiErr || $isZonErr) ? 'DITOLAK' : 'MENUNGGU'),
+                        'badgeBg' => $isZonOk ? '#16a34a' : (($isJawiErr || $isZonErr) ? '#dc2626' : '#94a3b8'),
                     ],
                 ];
             @endphp

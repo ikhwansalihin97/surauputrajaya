@@ -657,7 +657,7 @@
                                 <div>
                                     <h6 class="fw-bold text-warning-emphasis mb-1">Temujanji Lawatan Tapak Belum Ditetapkan</h6>
                                     <p class="small text-secondary mb-0">
-                                        Pentadbir JAWI belum menetapkan temujanji lawatan tapak bagi permohonan ini. Pentadbir Zon hanya boleh meluluskan permohonan selepas lawatan tapak dibuat.
+                                        Pentadbir JAWI belum menetapkan temujanji lawatan tapak bagi permohonan ini. Permohonan hanya boleh diluluskan selepas lawatan tapak dibuat.
                                     </p>
                                 </div>
                             </div>
@@ -688,11 +688,11 @@
 
         </div>
 
-        <!-- Panel Tindakan Pentadbir Zon -->
+        <!-- Panel Keputusan Akhir -->
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-3 sticky-top" style="top: 20px;">
                 <div class="card-header text-white fw-bold py-3" style="background: linear-gradient(135deg, #1e3a8a 0%, #0369a1 100%);">
-                    <i class="fa-solid fa-gavel me-2"></i> Tindakan Pentadbir Zon
+                    <i class="fa-solid fa-gavel me-2"></i> Keputusan Akhir Permohonan
                     <div class="small opacity-75 fw-normal mt-0.5">Kelulusan Permohonan Selepas Lawatan Tapak</div>
                 </div>
                 <div class="card-body p-3">
@@ -737,7 +737,7 @@
                                 @endif
                             </li>
                             <li class="d-flex justify-content-between align-items-center">
-                                <span><i class="fa-solid fa-map-location-dot me-1 text-muted"></i> 4. Pentadbir Zon:</span>
+                                <span><i class="fa-solid fa-map-location-dot me-1 text-muted"></i> 4. Keputusan Akhir:</span>
                                 @if($isZonApproved)
                                     <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> Diluluskan</span>
                                 @elseif($isZonRejected)
@@ -756,7 +756,7 @@
                                 <i class="fa-solid fa-circle-check me-1"></i> Permohonan Telah Diluluskan
                             </div>
                             <div class="small text-secondary">
-                                Permohonan ini telah disahkan &amp; diluluskan oleh Pentadbir Zon
+                                Permohonan ini telah disahkan &amp; diluluskan
                                 @if($zonConf?->confirmed_at)
                                     pada <strong>{{ $zonConf->confirmed_at->format('d/m/Y h:i A') }}</strong>.
                                 @endif
@@ -793,10 +793,10 @@
                             <i class="fa-solid fa-lock me-1"></i> Keputusan Telah Disimpan &amp; Dikunci
                         </button>
                     @else
-                        <!-- Form Kelulusan Pentadbir Zon -->
+                        <!-- Form Keputusan Akhir -->
                         @if(!$hasAppointment)
                             <div class="alert alert-warning border-0 small mb-3">
-                                <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Perhatian:</strong> Temujanji lawatan tapak belum diatur oleh Pentadbir JAWI. Pentadbir Zon hanya boleh meluluskan permohonan selepas lawatan tapak dibuat.
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Perhatian:</strong> Temujanji lawatan tapak belum diatur oleh Pentadbir JAWI. Permohonan hanya boleh diluluskan selepas lawatan tapak dibuat.
                             </div>
                         @endif
 
@@ -814,7 +814,7 @@
                             @endif
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold small">Status Kelulusan Pentadbir Zon</label>
+                                <label class="form-label fw-semibold small">Status Kelulusan</label>
                                 <select name="status" id="selectStatusZon" class="form-select" {{ !$hasAppointment ? 'disabled' : 'required' }}>
                                     <option value="">-- Pilih Keputusan --</option>
                                     <option value="APPROVED" selected>LULUS / SAHKAN PERMOHONAN</option>

@@ -16,6 +16,13 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
+        // Serah tugas Pentadbir Surau yang menunggu: bawa calon ke halaman terima/tolak
+        // (sentiasa jika tiada peranan; sekali bagi setiap sesi log masuk jika sudah ada peranan)
+        $adaSerahTugas = \App\Models\SurauPertukaranPentadbir::where('kepada_user_id', $user->id)->aktif()->exists();
+        if ($adaSerahTugas && ($user->roles->isEmpty() || !session('serah_tugas_dimaklum'))) {
+            return redirect()->route('pertukaran-pentadbir.index');
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Dapatkan Role Aktif
@@ -24,6 +31,12 @@ class DashboardController extends Controller
 
         $defaultRole = $user->roles->first()?->slug ?? 'surau';
         $activeRole = session('active_role', $defaultRole);
+
+        // Peranan aktif yang tidak lagi dimiliki (cth. peranan Pentadbir Zon yang telah dibuang)
+        if (!$user->roles->contains('slug', $activeRole)) {
+            $activeRole = $defaultRole;
+            session(['active_role' => $activeRole]);
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -291,24 +304,22 @@ class DashboardController extends Controller
                     $q->where('peringkat', 'MASJID')->where('status', 'APPROVED');
                 })->where('status', '!=', 'REJECTED')->count();
 
+                // Disahkan Masjid, temujanji lawatan tapak belum ditetapkan
                 $stageJawi = Application::whereHas('confirmations', function ($q) {
                     $q->where('peringkat', 'MASJID')->where('status', 'APPROVED');
-                })->whereDoesntHave('confirmations', function ($q) {
-                    $q->where('peringkat', 'JAWI')->where('status', 'APPROVED');
-                })->where('status', '!=', 'REJECTED')->count();
+                })->whereDoesntHave('appointments')
+                  ->whereNotIn('status', ['REJECTED', 'APPROVED'])->count();
 
-                $stageZon = Application::whereHas('confirmations', function ($q) {
-                    $q->where('peringkat', 'JAWI')->where('status', 'APPROVED');
-                })->whereDoesntHave('confirmations', function ($q) {
-                    $q->where('peringkat', 'ZON')->where('status', 'APPROVED');
-                })->where('status', '!=', 'REJECTED')->count();
+                // Temujanji ditetapkan, menanti keputusan akhir Pentadbir JAWI
+                $stageLawatan = Application::whereHas('appointments')
+                  ->whereNotIn('status', ['REJECTED', 'APPROVED'])->count();
 
                 $stageCompleted = Application::where('status', 'APPROVED')->count();
 
                 $workflowStages = [
                     'masjid'    => $stageMasjid,
                     'jawi'      => $stageJawi,
-                    'zon'       => $stageZon,
+                    'lawatan'   => $stageLawatan,
                     'completed' => $stageCompleted,
                 ];
 
@@ -373,55 +384,6 @@ class DashboardController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | PENTADBIR ZON
-            |--------------------------------------------------------------------------
-            */
-
-            case 'zon':
-
-                $totalPermohonan = Application::count();
-
-                $menungguPengesahan = Application::where(function($q) {
-                    $q->where('status', 'PENDING_ZON')
-                      ->orWhereHas('confirmations', function ($cq) {
-                          $cq->where('peringkat', 'JAWI')->where('status', 'APPROVED');
-                      });
-                })->whereDoesntHave('confirmations', function ($q) {
-                    $q->where('peringkat', 'ZON');
-                })->count();
-
-                $telahDisahkan = Application::whereHas('confirmations', function ($q) {
-                    $q->where('peringkat', 'ZON')->where('status', 'APPROVED');
-                })->count();
-
-                $ditolak = Application::whereHas('confirmations', function ($q) {
-                    $q->where('peringkat', 'ZON')->where('status', 'REJECTED');
-                })->count();
-
-                $senaraiPermohonanTerkini = Application::with([
-                    'confirmations',
-                    'masjidConfirmation',
-                    'jawiConfirmation',
-                    'masjid'
-                ])
-                    ->latest()
-                    ->take(5)
-                    ->get();
-
-                return view(
-                    'dashboard.zon',
-                    compact(
-                        'totalPermohonan',
-                        'menungguPengesahan',
-                        'telahDisahkan',
-                        'ditolak',
-                        'senaraiPermohonanTerkini'
-                    )
-                );
-
-
-            /*
-            |--------------------------------------------------------------------------
             | PENTADBIR SURAU
             |--------------------------------------------------------------------------
             */
@@ -458,15 +420,25 @@ class DashboardController extends Controller
                         'jawiConfirmation', 'meetingMinutes', 'masjid', 'appointment'
                     ];
 
-                    $application = Application::where('user_id', $user->id)
-                        ->where('status', 'APPROVED')
-                        ->orderByDesc('id')
-                        ->get()
-                        ->map(fn ($app) => $app->currentApproved())
-                        ->first(fn ($current) => $current && (int) $current->user_id === (int) $user->id)
-                        ?->load($relations);
+                    // Surau yang sedang dipilih (pengguna boleh mentadbir beberapa surau)
+                    $surau = $user->activeSurau();
 
-                    if (!$application) {
+                    if ($surau) {
+                        // Surau sedia ada (didaftar oleh JAWI) tidak mempunyai permohonan
+                        $application = $surau->application_id
+                            ? Application::find($surau->application_id)?->currentApproved()?->load($relations)
+                            : null;
+                    } else {
+                        $application = Application::where('user_id', $user->id)
+                            ->where('status', 'APPROVED')
+                            ->orderByDesc('id')
+                            ->get()
+                            ->map(fn ($app) => $app->currentApproved())
+                            ->first(fn ($current) => $current && (int) $current->user_id === (int) $user->id)
+                            ?->load($relations);
+                    }
+
+                    if (!$application && !$surau) {
                         $application = Application::with($relations)
                             ->where('user_id', $user->id)
                             ->where('jenis', 'BARU')
@@ -474,7 +446,7 @@ class DashboardController extends Controller
                     }
 
                     // Padankan mengikut e-mel atau IC pemohon jika belum dipautkan user_id
-                    if (!$application) {
+                    if (!$application && !$surau) {
                         $application = Application::with([
                             'confirmations', 'masjidConfirmation', 'zonConfirmation',
                             'jawiConfirmation', 'meetingMinutes', 'masjid', 'appointment'
@@ -511,7 +483,7 @@ class DashboardController extends Controller
                             ->first()
                         : null;
 
-                    return view('dashboard.surau', compact('application', 'applications', 'minitList', 'revision'));
+                    return view('dashboard.surau', compact('application', 'applications', 'minitList', 'revision', 'surau'));
                 };
 
 

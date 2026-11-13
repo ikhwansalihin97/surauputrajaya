@@ -62,12 +62,38 @@ class KemaskiniController extends Controller
             $draft->parent_id    = $current->rootId();
             $draft->status       = 'DRAFT';
             $draft->user_id      = Auth::id();
+            $draft->surau_id     = $current->surau_id;
+
+            // Maklumat surau terkini datang daripada rekod rasmi surau (mungkin telah dikemaskini terus)
+            if ($current->surau) {
+                $draft->fill($current->surau->only(\App\Models\Surau::PROFILE_FIELDS));
+            }
+
             $draft->save();
 
-            foreach ($current->committees as $committee) {
-                $copy = $committee->replicate();
-                $copy->application_id = $draft->id;
-                $copy->save();
+            // Senarai AJK terkini datang daripada rekod surau (mungkin telah dikemaskini terus)
+            $surauAjk = $current->surau?->committees ?? collect();
+
+            if ($surauAjk->isNotEmpty()) {
+                $pemohonIc = preg_replace('/\D/', '', (string) $current->pemohon_ic);
+                foreach ($surauAjk as $ajk) {
+                    ApplicationCommittee::create([
+                        'application_id' => $draft->id,
+                        'nama'           => $ajk->nama,
+                        'ic_no'          => $ajk->ic_no,
+                        'jawatan'        => $ajk->jawatan,
+                        'alamat'         => $ajk->alamat ?? '',
+                        'no_tel'         => $ajk->no_tel ?? '',
+                        'email'          => $ajk->email ?? '',
+                        'is_applicant'   => $pemohonIc !== '' && preg_replace('/\D/', '', $ajk->ic_no) === $pemohonIc,
+                    ]);
+                }
+            } else {
+                foreach ($current->committees as $committee) {
+                    $copy = $committee->replicate();
+                    $copy->application_id = $draft->id;
+                    $copy->save();
+                }
             }
 
             // Dokumen sedia ada dibawa ke draf (fail yang sama, tidak disalin).
@@ -221,7 +247,7 @@ class KemaskiniController extends Controller
         $this->notifyMasjid($draft);
 
         return redirect()->route('dashboard')
-            ->with('kemaskini_success', "Permohonan kemaskini {$draft->reference_no} telah dihantar untuk pengesahan Pentadbir Masjid, JAWI & Pentadbir Zon. Maklumat rasmi surau kekal sehingga kemaskini diluluskan.");
+            ->with('kemaskini_success', "Permohonan kemaskini {$draft->reference_no} telah dihantar untuk pengesahan Pentadbir Masjid & JAWI. Maklumat rasmi surau kekal sehingga kemaskini diluluskan.");
     }
 
     /**
@@ -325,7 +351,7 @@ class KemaskiniController extends Controller
             'ajk_ic'                  => ['required', 'array', 'size:' . $ajkCount],
             'ajk_ic.*'                => ['required', 'regex:/^[0-9]+$/', 'max:12'],
             'ajk_jawatan'             => ['required', 'array', 'size:' . $ajkCount],
-            'ajk_jawatan.*'           => ['required', Rule::in(['Pengerusi', 'Setiausaha', 'Bendahari', 'AJK'])],
+            'ajk_jawatan.*'           => ['required', Rule::in(\App\Models\SurauCommittee::JAWATAN)],
             'ajk_alamat'              => ['required', 'array', 'size:' . $ajkCount],
             'ajk_alamat.*'            => ['required', 'string'],
             'ajk_tel'                 => ['required', 'array', 'size:' . $ajkCount],

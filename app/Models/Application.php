@@ -114,6 +114,14 @@ class Application extends Model
             );
     }
 
+    /**
+     * Rekod rasmi surau bagi permohonan ini (diwujudkan selepas pendaftaran diluluskan).
+     */
+    public function surau()
+    {
+        return $this->belongsTo(Surau::class);
+    }
+
     public function committees()
     {
         return $this->hasMany(ApplicationCommittee::class);

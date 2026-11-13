@@ -30,17 +30,20 @@
                     </a>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link text-dark small fw-medium px-3" href="{{ route('permohonan.form') }}">
-                        Permohonan Surau
-                    </a>
-                </li>
+                {{-- Pautan awam: disembunyikan selepas log masuk --}}
+                @guest
+                    <li class="nav-item">
+                        <a class="nav-link text-dark small fw-medium px-3" href="{{ route('permohonan.form') }}">
+                            Permohonan Surau
+                        </a>
+                    </li>
 
-                <li class="nav-item">
-                    <button type="button" class="nav-link btn btn-link text-dark text-decoration-none small fw-medium px-3 border-0" data-bs-toggle="modal" data-bs-target="#modalSemakanHeader">
-                        Semak Status Permohonan
-                    </button>
-                </li>
+                    <li class="nav-item">
+                        <button type="button" class="nav-link btn btn-link text-dark text-decoration-none small fw-medium px-3 border-0" data-bs-toggle="modal" data-bs-target="#modalSemakanHeader">
+                            Semak Status Permohonan
+                        </button>
+                    </li>
+                @endguest
 
                 <!-- Logik Sesi Pengguna -->
                 @auth

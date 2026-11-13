@@ -821,6 +821,361 @@
 
 
                         <!-- =================================================
+                            C. BUAT TEMUJANJI LAWATAN TAPAK
+                        ================================================== -->
+
+                        @php
+                            $allAppointments = $application->appointments ?? collect();
+                            $appointment = $allAppointments->first(); // Rekod terkini
+                            $zonConf = $application->zonConfirmation;
+                            $isZonConfirmed = $zonConf && in_array($zonConf->status, ['APPROVED', 'REJECTED']);
+                            $hasAppointment = $appointment !== null;
+                        @endphp
+
+                        <div class="border rounded-3 mb-3 overflow-hidden">
+
+                            <div class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+
+                                <div class="fw-bold small">
+
+                                    <i class="fa-solid fa-calendar-check text-primary me-2"></i>
+
+                                    Temujanji Lawatan Tapak
+
+                                </div>
+
+                                @if($hasAppointment)
+                                    <span class="badge bg-primary">
+                                        <i class="fa-solid fa-check me-1"></i> {{ $allAppointments->count() }} Rekod
+                                    </span>
+                                @endif
+
+                            </div>
+
+                            <div class="p-3">
+
+                                @if($hasAppointment)
+                                    <!-- RINGKASAN TEMUJANJI TERKINI -->
+                                    <div class="card border-primary border-opacity-25 bg-primary bg-opacity-10 rounded-3 mb-3 p-3 shadow-sm">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-primary border-opacity-25">
+                                            <div class="fw-bold text-primary small">
+                                                <i class="fa-solid fa-calendar-check me-1"></i> Rekod Temujanji Terkini (Aktif)
+                                            </div>
+                                            <span class="badge bg-primary">AKTIF</span>
+                                        </div>
+                                        <div class="row g-2 small text-dark">
+                                            <div class="col-6">
+                                                <span class="text-muted d-block" style="font-size: 0.75rem;">Tarikh Temujanji:</span>
+                                                <strong class="text-primary"><i class="fa-regular fa-calendar me-1"></i> {{ $appointment->tarikh_temujanji ? $appointment->tarikh_temujanji->format('d/m/Y') : '-' }}</strong>
+                                            </div>
+                                            <div class="col-6">
+                                                <span class="text-muted d-block" style="font-size: 0.75rem;">Masa Temujanji:</span>
+                                                <strong class="text-primary"><i class="fa-regular fa-clock me-1"></i> {{ $appointment->masa_temujanji ? \Carbon\Carbon::parse($appointment->masa_temujanji)->format('h:i A') : '-' }}</strong>
+                                            </div>
+                                            <div class="col-12 mt-2">
+                                                <span class="text-muted d-block" style="font-size: 0.75rem;">Tempat / Lokasi:</span>
+                                                <strong><i class="fa-solid fa-location-dot me-1 text-danger"></i> {{ $appointment->tempat }}</strong>
+                                            </div>
+                                            @if($appointment->catatan)
+                                            <div class="col-12 mt-2">
+                                                <span class="text-muted d-block" style="font-size: 0.75rem;">Catatan / Arahan:</span>
+                                                <div class="bg-white p-2 rounded border border-secondary border-opacity-25 text-secondary small">{{ $appointment->catatan }}</div>
+                                            </div>
+                                            @endif
+                                            @if($appointment->ditetapkanOleh)
+                                            <div class="col-12 mt-2 text-muted" style="font-size: 0.72rem;">
+                                                <i class="fa-solid fa-user-pen me-1"></i> Ditetapkan oleh: <strong>{{ $appointment->ditetapkanOleh->name }}</strong> ({{ $appointment->created_at ? $appointment->created_at->format('d/m/Y h:i A') : '' }})
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if($allAppointments->count() > 1)
+                                    <!-- SEJARAH TEMUJANJI TERDAHULU -->
+                                    <div class="accordion mb-3" id="accordionSejarahTemujanji">
+                                        <div class="accordion-item border rounded-3 overflow-hidden shadow-sm">
+                                            <h2 class="accordion-header" id="headingSejarah">
+                                                <button class="accordion-button collapsed py-2 px-3 bg-light text-dark fw-bold small" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSejarah" aria-expanded="false" aria-controls="collapseSejarah">
+                                                    <i class="fa-solid fa-clock-rotate-left me-2 text-secondary"></i> Sejarah Temujanji Terdahulu ({{ $allAppointments->count() - 1 }} Rekod Lama)
+                                                </button>
+                                            </h2>
+                                            <div id="collapseSejarah" class="accordion-collapse collapse" aria-labelledby="headingSejarah" data-bs-parent="#accordionSejarahTemujanji">
+                                                <div class="accordion-body p-2 bg-light">
+                                                    @foreach($allAppointments->skip(1) as $index => $oldApt)
+                                                        <div class="card mb-2 p-2.5 border-0 shadow-sm bg-white rounded-3 small">
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <strong class="text-secondary"><i class="fa-regular fa-calendar-days me-1"></i> {{ $oldApt->tarikh_temujanji?->format('d/m/Y') }}</strong>
+                                                                <span class="badge bg-secondary opacity-75">REKOD LAMA</span>
+                                                            </div>
+                                                            <div class="text-dark">
+                                                                <i class="fa-regular fa-clock me-1 text-muted"></i> {{ $oldApt->masa_temujanji ? \Carbon\Carbon::parse($oldApt->masa_temujanji)->format('h:i A') : '-' }} | 
+                                                                <i class="fa-solid fa-location-dot me-1 text-muted"></i> {{ $oldApt->tempat }}
+                                                            </div>
+                                                            @if($oldApt->catatan)
+                                                                <div class="text-muted mt-1 fst-italic">"{{ $oldApt->catatan }}"</div>
+                                                            @endif
+                                                            <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                                                                Ditetapkan oleh: {{ $oldApt->ditetapkanOleh?->name ?? 'Pentadbir' }} ({{ $oldApt->created_at?->format('d/m/Y h:i A') }})
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if($isZonConfirmed)
+                                    <div class="alert alert-secondary py-2 px-3 small rounded-3 mb-3 border-0 bg-secondary bg-opacity-10 text-secondary">
+                                        <i class="fa-solid fa-lock me-1"></i> Keputusan akhir telah dibuat bagi permohonan ini. Temujanji tidak boleh ditambah atau diubah semula.
+                                    </div>
+                                @elseif($hasAppointment)
+                                    <div class="alert alert-info py-2 px-3 small rounded-3 mb-3 border-0 bg-info bg-opacity-10 text-info">
+                                        <i class="fa-solid fa-circle-info me-1"></i> Borang di bawah adalah untuk menetapkan **temujanji baharu**. Rekod temujanji lama akan kekal disimpan dalam sejarah.
+                                    </div>
+                                @endif
+
+                                <form
+                                    action="{{ route(
+                                        'admin.jawi.pengesahan.temujanji',
+                                        $application->id
+                                    ) }}"
+                                    method="POST">
+
+                                    @csrf
+
+
+                                    <!-- TARIKH -->
+                                    <div class="mb-3">
+
+                                        <label
+                                            for="tarikhTemujanji"
+                                            class="form-label small fw-semibold">
+
+                                            Tarikh Temujanji Baharu
+
+                                        </label>
+
+                                        <input
+                                            type="date"
+                                            name="tarikh_temujanji"
+                                            id="tarikhTemujanji"
+                                            class="form-control"
+                                            value="{{ old('tarikh_temujanji') }}"
+                                            {{ $isZonConfirmed ? 'disabled' : 'required' }}>
+
+                                    </div>
+
+
+                                    <!-- MASA -->
+                                    <div class="mb-3">
+
+                                        <label
+                                            for="masaTemujanji"
+                                            class="form-label small fw-semibold">
+
+                                            Masa Temujanji Baharu
+
+                                        </label>
+
+                                        <input
+                                            type="time"
+                                            name="masa_temujanji"
+                                            id="masaTemujanji"
+                                            class="form-control"
+                                            value="{{ old('masa_temujanji') }}"
+                                            {{ $isZonConfirmed ? 'disabled' : 'required' }}>
+
+                                    </div>
+
+
+                                    <!-- TEMPAT -->
+                                    <div class="mb-3">
+
+                                        <label
+                                            for="tempatTemujanji"
+                                            class="form-label small fw-semibold">
+
+                                            Tempat / Lokasi
+
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            name="tempat_temujanji"
+                                            id="tempatTemujanji"
+                                            class="form-control"
+                                            value="{{ old('tempat_temujanji', $appointment?->tempat ?? 'Pejabat JAWI / Tapak Surau') }}"
+                                            placeholder="Contoh: Pejabat JAWI / Tapak Surau"
+                                            {{ $isZonConfirmed ? 'disabled' : 'required' }}>
+
+                                    </div>
+
+
+                                    <!-- CATATAN / ARAHAN TEMUJANJI -->
+                                    <div class="mb-3">
+
+                                        <label
+                                            for="catatanTemujanji"
+                                            class="form-label small fw-semibold">
+
+                                            Catatan / Arahan Baharu (Opsional)
+
+                                        </label>
+
+                                        <textarea
+                                            name="catatan"
+                                            id="catatanTemujanji"
+                                            class="form-control"
+                                            rows="2"
+                                            placeholder="Sila bawa dokumen sokongan berkaitan..."
+                                            {{ $isZonConfirmed ? 'disabled' : '' }}>{{ old('catatan') }}</textarea>
+
+                                    </div>
+
+
+                                    <!-- BUTANG -->
+                                    @if($isZonConfirmed)
+                                        <button
+                                            type="button"
+                                            class="btn btn-secondary w-100 fw-bold"
+                                            disabled>
+
+                                            <i class="fa-solid fa-lock me-1"></i>
+                                            Temujanji Dikunci (Keputusan Akhir Telah Dibuat)
+
+                                        </button>
+                                    @else
+                                        <button
+                                            type="submit"
+                                            class="btn btn-primary w-100 fw-bold shadow-sm">
+
+                                            <i class="fa-solid fa-calendar-plus me-1"></i>
+                                            Buat Temujanji Baharu
+                                        </button>
+                                    @endif
+
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                        <!-- =================================================
+                            D. KEPUTUSAN AKHIR SELEPAS LAWATAN TAPAK
+                        ================================================== -->
+
+                        @php
+                            $keputusanAkhir = $zonConf && in_array($zonConf->status, ['APPROVED', 'REJECTED']) ? $zonConf : null;
+                        @endphp
+
+                        <div class="border rounded-3 mb-3 overflow-hidden">
+
+                            <div class="bg-light px-3 py-2 border-bottom">
+                                <div class="fw-bold small">
+                                    <i class="fa-solid fa-gavel text-success me-2"></i>
+                                    Keputusan Akhir Permohonan
+                                </div>
+                            </div>
+
+                            <div class="p-3">
+
+                                @if($keputusanAkhir)
+
+                                    <div class="alert {{ $keputusanAkhir->status === 'APPROVED' ? 'alert-success' : 'alert-danger' }} border-0 small mb-3">
+                                        <div class="fw-bold mb-1">
+                                            @if($keputusanAkhir->status === 'APPROVED')
+                                                <i class="fa-solid fa-circle-check me-1"></i> Permohonan Telah Diluluskan
+                                            @else
+                                                <i class="fa-solid fa-circle-xmark me-1"></i> Permohonan Telah Ditolak
+                                            @endif
+                                        </div>
+                                        @if($keputusanAkhir->confirmed_at)
+                                            Pada {{ \Carbon\Carbon::parse($keputusanAkhir->confirmed_at)->format('d/m/Y h:i A') }}
+                                        @endif
+                                    </div>
+
+                                    @if(!empty($keputusanAkhir->catatan))
+                                        <div class="p-2 bg-light rounded border small mb-3">
+                                            <strong>Catatan / Laporan Lawatan Tapak:</strong>
+                                            <div class="text-secondary mt-1 fst-italic">"{{ $keputusanAkhir->catatan }}"</div>
+                                        </div>
+                                    @endif
+
+                                    <button type="button" class="btn btn-secondary btn-sm w-100 fw-bold" disabled>
+                                        <i class="fa-solid fa-lock me-1"></i> Keputusan Telah Disimpan &amp; Dikunci
+                                    </button>
+
+                                @else
+
+                                    @if(!$hasAppointment)
+                                        <div class="alert alert-warning border-0 small mb-3">
+                                            <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                                            Sila tetapkan temujanji lawatan tapak terlebih dahulu. Keputusan akhir hanya boleh dibuat selepas lawatan tapak.
+                                        </div>
+                                    @endif
+
+                                    <form action="{{ route('admin.jawi.pengesahan.keputusanAkhir', $application->id) }}" method="POST" id="formKeputusanAkhir">
+                                        @csrf
+                                        @method('PUT')
+
+                                        @if($hasAppointment)
+                                            <div class="form-check p-3 bg-light rounded border mb-3">
+                                                <input class="form-check-input ms-0 me-2" type="checkbox" name="pengesahan_lawatan" id="pengesahanLawatan" value="1" checked>
+                                                <label class="form-check-label small fw-semibold text-dark" for="pengesahanLawatan">
+                                                    <i class="fa-solid fa-clipboard-check text-success me-1"></i>
+                                                    Saya mengesahkan bahawa lawatan tapak ke <u>{{ $application->nama_surau }}</u> telah selesai dijalankan.
+                                                </label>
+                                            </div>
+                                        @endif
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold small">Status Kelulusan</label>
+                                            <select name="status" id="selectStatusAkhir" class="form-select form-select-sm" {{ !$hasAppointment ? 'disabled' : 'required' }}>
+                                                <option value="">-- Pilih Keputusan --</option>
+                                                <option value="APPROVED" selected>LULUS / SAHKAN PERMOHONAN</option>
+                                                <option value="REJECTED">TOLAK PERMOHONAN</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold small">Catatan / Laporan Hasil Lawatan Tapak</label>
+                                            <textarea name="catatan_zon" class="form-control form-control-sm" rows="3" placeholder="Masukkan ulasan lawatan tapak, syor kelulusan, atau catatan berkaitan..." {{ !$hasAppointment ? 'disabled' : '' }}>Lawatan tapak telah dilaksanakan dan premis surau didapati mematuhi syarat yang ditetapkan.</textarea>
+                                        </div>
+
+                                        <div class="p-2 bg-light rounded border small mb-3 text-secondary">
+                                            <div class="fw-bold text-dark mb-1"><i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i> Tindakan Automatik Selepas Lulus:</div>
+                                            <ul class="ps-3 mb-0" style="font-size:0.78rem;">
+                                                <li>Minit mesyuarat yang masih dalam semakan akan disahkan.</li>
+                                                <li>Pemohon didaftarkan sebagai pengguna sistem (Pentadbir Surau).</li>
+                                                <li><strong>E-mel 1:</strong> E-mel kelulusan permohonan dihantar kepada pemohon (CC kesemua pentadbir).</li>
+                                                <li><strong>E-mel 2:</strong> E-mel link pengaktifan akaun dihantar kepada pemohon (BCC Pentadbir Sistem).</li>
+                                            </ul>
+                                        </div>
+
+                                        @if($hasAppointment)
+                                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow-sm" style="background-color:#15803d; border-color:#15803d;">
+                                                <i class="fa-solid fa-check-double me-1"></i> Simpan Keputusan Akhir
+                                            </button>
+                                        @else
+                                            <button type="button" class="btn btn-secondary w-100 fw-bold py-2" disabled>
+                                                <i class="fa-solid fa-lock me-1"></i> Menunggu Lawatan Tapak Ditetapkan
+                                            </button>
+                                        @endif
+                                    </form>
+
+                                @endif
+
+                            </div>
+                        </div>
+
+                        {{-- Seksyen Sahkan Minit Mesyuarat & Semak Permohonan disembunyikan buat sementara.
+                             Tukar kepada true untuk memaparkannya semula. --}}
+                        @php $paparMinitDanSemakan = false; @endphp
+
+                        @if($paparMinitDanSemakan)
+                        <!-- =================================================
                             A. SAHKAN MINIT MESYUARAT
                         ================================================== -->
 
@@ -1239,344 +1594,7 @@
 
                         </div>
 
-
-                        <!-- =================================================
-                            C. BUAT TEMUJANJI LAWATAN TAPAK
-                        ================================================== -->
-
-                        @php
-                            $allAppointments = $application->appointments ?? collect();
-                            $appointment = $allAppointments->first(); // Rekod terkini
-                            $zonConf = $application->zonConfirmation;
-                            $isZonConfirmed = $zonConf && in_array($zonConf->status, ['APPROVED', 'REJECTED']);
-                            $hasAppointment = $appointment !== null;
-                        @endphp
-
-                        <div class="border rounded-3 overflow-hidden">
-
-                            <div class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
-
-                                <div class="fw-bold small">
-
-                                    <i class="fa-solid fa-calendar-check text-primary me-2"></i>
-
-                                    Temujanji Lawatan Tapak
-
-                                </div>
-
-                                @if($hasAppointment)
-                                    <span class="badge bg-primary">
-                                        <i class="fa-solid fa-check me-1"></i> {{ $allAppointments->count() }} Rekod
-                                    </span>
-                                @endif
-
-                            </div>
-
-                            <div class="p-3">
-
-                                @if($hasAppointment)
-                                    <!-- RINGKASAN TEMUJANJI TERKINI -->
-                                    <div class="card border-primary border-opacity-25 bg-primary bg-opacity-10 rounded-3 mb-3 p-3 shadow-sm">
-                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-primary border-opacity-25">
-                                            <div class="fw-bold text-primary small">
-                                                <i class="fa-solid fa-calendar-check me-1"></i> Rekod Temujanji Terkini (Aktif)
-                                            </div>
-                                            <span class="badge bg-primary">AKTIF</span>
-                                        </div>
-                                        <div class="row g-2 small text-dark">
-                                            <div class="col-6">
-                                                <span class="text-muted d-block" style="font-size: 0.75rem;">Tarikh Temujanji:</span>
-                                                <strong class="text-primary"><i class="fa-regular fa-calendar me-1"></i> {{ $appointment->tarikh_temujanji ? $appointment->tarikh_temujanji->format('d/m/Y') : '-' }}</strong>
-                                            </div>
-                                            <div class="col-6">
-                                                <span class="text-muted d-block" style="font-size: 0.75rem;">Masa Temujanji:</span>
-                                                <strong class="text-primary"><i class="fa-regular fa-clock me-1"></i> {{ $appointment->masa_temujanji ? \Carbon\Carbon::parse($appointment->masa_temujanji)->format('h:i A') : '-' }}</strong>
-                                            </div>
-                                            <div class="col-12 mt-2">
-                                                <span class="text-muted d-block" style="font-size: 0.75rem;">Tempat / Lokasi:</span>
-                                                <strong><i class="fa-solid fa-location-dot me-1 text-danger"></i> {{ $appointment->tempat }}</strong>
-                                            </div>
-                                            @if($appointment->catatan)
-                                            <div class="col-12 mt-2">
-                                                <span class="text-muted d-block" style="font-size: 0.75rem;">Catatan / Arahan:</span>
-                                                <div class="bg-white p-2 rounded border border-secondary border-opacity-25 text-secondary small">{{ $appointment->catatan }}</div>
-                                            </div>
-                                            @endif
-                                            @if($appointment->ditetapkanOleh)
-                                            <div class="col-12 mt-2 text-muted" style="font-size: 0.72rem;">
-                                                <i class="fa-solid fa-user-pen me-1"></i> Ditetapkan oleh: <strong>{{ $appointment->ditetapkanOleh->name }}</strong> ({{ $appointment->created_at ? $appointment->created_at->format('d/m/Y h:i A') : '' }})
-                                            </div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endif
-
-                                @if($allAppointments->count() > 1)
-                                    <!-- SEJARAH TEMUJANJI TERDAHULU -->
-                                    <div class="accordion mb-3" id="accordionSejarahTemujanji">
-                                        <div class="accordion-item border rounded-3 overflow-hidden shadow-sm">
-                                            <h2 class="accordion-header" id="headingSejarah">
-                                                <button class="accordion-button collapsed py-2 px-3 bg-light text-dark fw-bold small" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSejarah" aria-expanded="false" aria-controls="collapseSejarah">
-                                                    <i class="fa-solid fa-clock-rotate-left me-2 text-secondary"></i> Sejarah Temujanji Terdahulu ({{ $allAppointments->count() - 1 }} Rekod Lama)
-                                                </button>
-                                            </h2>
-                                            <div id="collapseSejarah" class="accordion-collapse collapse" aria-labelledby="headingSejarah" data-bs-parent="#accordionSejarahTemujanji">
-                                                <div class="accordion-body p-2 bg-light">
-                                                    @foreach($allAppointments->skip(1) as $index => $oldApt)
-                                                        <div class="card mb-2 p-2.5 border-0 shadow-sm bg-white rounded-3 small">
-                                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                                <strong class="text-secondary"><i class="fa-regular fa-calendar-days me-1"></i> {{ $oldApt->tarikh_temujanji?->format('d/m/Y') }}</strong>
-                                                                <span class="badge bg-secondary opacity-75">REKOD LAMA</span>
-                                                            </div>
-                                                            <div class="text-dark">
-                                                                <i class="fa-regular fa-clock me-1 text-muted"></i> {{ $oldApt->masa_temujanji ? \Carbon\Carbon::parse($oldApt->masa_temujanji)->format('h:i A') : '-' }} | 
-                                                                <i class="fa-solid fa-location-dot me-1 text-muted"></i> {{ $oldApt->tempat }}
-                                                            </div>
-                                                            @if($oldApt->catatan)
-                                                                <div class="text-muted mt-1 fst-italic">"{{ $oldApt->catatan }}"</div>
-                                                            @endif
-                                                            <div class="text-muted mt-1" style="font-size: 0.7rem;">
-                                                                Ditetapkan oleh: {{ $oldApt->ditetapkanOleh?->name ?? 'Pentadbir' }} ({{ $oldApt->created_at?->format('d/m/Y h:i A') }})
-                                                            </div>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-
-                                @if($isZonConfirmed)
-                                    <div class="alert alert-secondary py-2 px-3 small rounded-3 mb-3 border-0 bg-secondary bg-opacity-10 text-secondary">
-                                        <i class="fa-solid fa-lock me-1"></i> Pentadbir Zon telah membuat pengesahan permohonan ini. Temujanji tidak boleh ditambah atau diubah semula.
-                                    </div>
-                                @elseif($hasAppointment)
-                                    <div class="alert alert-info py-2 px-3 small rounded-3 mb-3 border-0 bg-info bg-opacity-10 text-info">
-                                        <i class="fa-solid fa-circle-info me-1"></i> Borang di bawah adalah untuk menetapkan **temujanji baharu**. Rekod temujanji lama akan kekal disimpan dalam sejarah.
-                                    </div>
-                                @endif
-
-                                <form
-                                    action="{{ route(
-                                        'admin.jawi.pengesahan.temujanji',
-                                        $application->id
-                                    ) }}"
-                                    method="POST">
-
-                                    @csrf
-
-
-                                    <!-- TARIKH -->
-                                    <div class="mb-3">
-
-                                        <label
-                                            for="tarikhTemujanji"
-                                            class="form-label small fw-semibold">
-
-                                            Tarikh Temujanji Baharu
-
-                                        </label>
-
-                                        <input
-                                            type="date"
-                                            name="tarikh_temujanji"
-                                            id="tarikhTemujanji"
-                                            class="form-control"
-                                            value="{{ old('tarikh_temujanji') }}"
-                                            {{ $isZonConfirmed ? 'disabled' : 'required' }}>
-
-                                    </div>
-
-
-                                    <!-- MASA -->
-                                    <div class="mb-3">
-
-                                        <label
-                                            for="masaTemujanji"
-                                            class="form-label small fw-semibold">
-
-                                            Masa Temujanji Baharu
-
-                                        </label>
-
-                                        <input
-                                            type="time"
-                                            name="masa_temujanji"
-                                            id="masaTemujanji"
-                                            class="form-control"
-                                            value="{{ old('masa_temujanji') }}"
-                                            {{ $isZonConfirmed ? 'disabled' : 'required' }}>
-
-                                    </div>
-
-
-                                    <!-- TEMPAT -->
-                                    <div class="mb-3">
-
-                                        <label
-                                            for="tempatTemujanji"
-                                            class="form-label small fw-semibold">
-
-                                            Tempat / Lokasi
-
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            name="tempat_temujanji"
-                                            id="tempatTemujanji"
-                                            class="form-control"
-                                            value="{{ old('tempat_temujanji', $appointment?->tempat ?? 'Pejabat JAWI / Tapak Surau') }}"
-                                            placeholder="Contoh: Pejabat JAWI / Tapak Surau"
-                                            {{ $isZonConfirmed ? 'disabled' : 'required' }}>
-
-                                    </div>
-
-
-                                    <!-- CATATAN / ARAHAN TEMUJANJI -->
-                                    <div class="mb-3">
-
-                                        <label
-                                            for="catatanTemujanji"
-                                            class="form-label small fw-semibold">
-
-                                            Catatan / Arahan Baharu (Opsional)
-
-                                        </label>
-
-                                        <textarea
-                                            name="catatan"
-                                            id="catatanTemujanji"
-                                            class="form-control"
-                                            rows="2"
-                                            placeholder="Sila bawa dokumen sokongan berkaitan..."
-                                            {{ $isZonConfirmed ? 'disabled' : '' }}>{{ old('catatan') }}</textarea>
-
-                                    </div>
-
-
-                                    <!-- BUTANG -->
-                                    @if($isZonConfirmed)
-                                        <button
-                                            type="button"
-                                            class="btn btn-secondary w-100 fw-bold"
-                                            disabled>
-
-                                            <i class="fa-solid fa-lock me-1"></i>
-                                            Temujanji Dikunci (Zon Telah Disahkan)
-
-                                        </button>
-                                    @else
-                                        <button
-                                            type="submit"
-                                            class="btn btn-primary w-100 fw-bold shadow-sm">
-
-                                            <i class="fa-solid fa-calendar-plus me-1"></i>
-                                            Buat Temujanji Baharu
-                                        </button>
-                                    @endif
-
-                                </form>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <!-- =====================================================
-                    3. PENTADBIR ZON
-                ====================================================== -->
-                <div class="card border-0 shadow-sm rounded-3 mb-3 overflow-hidden">
-
-                    <!-- HEADER -->
-                    <div class="card-header text-white py-3" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">
-
-                        <div class="fw-bold">
-                            <i class="fa-solid fa-location-dot me-2"></i>
-                            3. Pentadbir Zon
-                        </div>
-
-                        <small class="opacity-75">
-                            Semakan peringkat Zon
-                        </small>
-
-                    </div>
-
-
-                    <div class="card-body p-3">
-
-                        <!-- STATUS -->
-                        <div class="mb-3">
-
-                            <small class="text-muted">
-                                Status Semakan Zon
-                            </small>
-
-                            <div class="mt-1">
-
-                                @if(($application->status_zon ?? null) === 'APPROVED')
-
-                                    <span class="badge bg-success">
-                                        <i class="fa-solid fa-check me-1"></i>
-                                        DISAHKAN
-                                    </span>
-
-                                @elseif(($application->status_zon ?? null) === 'REJECTED')
-
-                                    <span class="badge bg-danger">
-                                        <i class="fa-solid fa-xmark me-1"></i>
-                                        DITOLAK
-                                    </span>
-
-                                @else
-
-                                    <span class="badge bg-warning text-dark">
-                                        <i class="fa-solid fa-clock me-1"></i>
-                                        DALAM SEMAKAN
-                                    </span>
-
-                                @endif
-
-                            </div>
-
-                        </div>
-
-
-                        <!-- TARIKH JIKA ADA -->
-                        @if(!empty($application->confirmed_at_zon))
-
-                            <div class="small text-muted mb-3">
-
-                                <i class="fa-regular fa-calendar me-1"></i>
-
-                                Tarikh:
-                                {{ \Carbon\Carbon::parse(
-                                    $application->confirmed_at_zon
-                                )->format('d/m/Y h:i A') }}
-
-                            </div>
-
                         @endif
-
-
-                        <!-- OVERRIDE -->
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline-primary w-100"
-                            onclick="overridePeringkat(
-                                'zon',
-                                {{ $application->id }}
-                            )">
-
-                            <i class="fa-solid fa-pen-to-square me-1"></i>
-
-                            Override Keputusan Zon
-
-                        </button>
 
                     </div>
 
@@ -1658,8 +1676,8 @@
                 },
 
                 {
-                    text: 'Disahkan untuk tindakan Pentadbir Zon',
-                    value: 'Permohonan telah disemak dan disahkan oleh pihak JAWI untuk tindakan selanjutnya oleh Pentadbir Zon.'
+                    text: 'Disahkan untuk lawatan tapak',
+                    value: 'Permohonan telah disemak dan disahkan oleh pihak JAWI untuk tindakan lawatan tapak.'
                 },
 
                 {
@@ -2514,5 +2532,51 @@
         @endif
 
     });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // =========================================================================
+    // PENGESAHAN KEPUTUSAN AKHIR (SweetAlert)
+    // =========================================================================
+    const formKeputusanAkhir = document.getElementById('formKeputusanAkhir');
+    if (formKeputusanAkhir) {
+        formKeputusanAkhir.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const status = document.getElementById('selectStatusAkhir')?.value;
+            const lawatan = document.getElementById('pengesahanLawatan');
+
+            if (!status) {
+                Swal.fire({ icon: 'warning', title: 'Sila pilih keputusan', confirmButtonColor: '#15803d' });
+                return;
+            }
+            if (status === 'APPROVED' && lawatan && !lawatan.checked) {
+                Swal.fire({ icon: 'warning', title: 'Sila sahkan lawatan tapak telah selesai dijalankan', confirmButtonColor: '#15803d' });
+                return;
+            }
+
+            const isApprove = status === 'APPROVED';
+            Swal.fire({
+                title: isApprove ? 'Luluskan Permohonan Surau?' : 'Tolak Permohonan Surau?',
+                html: isApprove
+                    ? 'Adakah anda pasti mahu <strong>MELULUSKAN</strong> permohonan ini?<br><br>' +
+                      '<div class="text-start p-2 bg-light rounded small text-secondary">' +
+                      '• Minit mesyuarat dalam semakan akan disahkan.<br>' +
+                      '• Pemohon akan didaftarkan sebagai pengguna (Pentadbir Surau).<br>' +
+                      '• <strong>E-mel 1:</strong> Kelulusan dihantar kepada pemohon & CC kesemua pentadbir.<br>' +
+                      '• <strong>E-mel 2:</strong> Pautan pengaktifan dihantar kepada pemohon & BCC Pentadbir Sistem.' +
+                      '</div>'
+                    : 'Adakah anda pasti mahu <strong>MENOLAK</strong> permohonan ini?',
+                icon: isApprove ? 'question' : 'warning',
+                showCancelButton: true,
+                confirmButtonColor: isApprove ? '#15803d' : '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: isApprove ? 'Ya, Luluskan & Hantar E-Mel' : 'Ya, Tolak Permohonan',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) formKeputusanAkhir.submit();
+            });
+        });
+    }
+});
 </script>
 @endsection

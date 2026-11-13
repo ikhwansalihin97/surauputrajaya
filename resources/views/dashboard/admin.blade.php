@@ -174,7 +174,6 @@
                                 'admin'  => ['#1e40af', '#eff6ff', '#bfdbfe', 'fa-user-shield'],
                                 'jawi'   => ['#0284c7', '#f0f9ff', '#bae6fd', 'fa-building-columns'],
                                 'masjid' => ['#0ea5e9', '#f0f9ff', '#bae6fd', 'fa-mosque'],
-                                'zon'    => ['#3b82f6', '#eff6ff', '#bfdbfe', 'fa-map-location-dot'],
                                 'surau'  => ['#d97706', '#fffbeb', '#fde68a', 'fa-kaaba'],
                                 default  => ['#64748b', '#f8fafc', '#e2e8f0', 'fa-user'],
                             };

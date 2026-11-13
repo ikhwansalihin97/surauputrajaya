@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Permohonan Ditolak Peringkat Zon</title>
+    <title>Permohonan Ditolak</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f0f7fc; font-family:'Segoe UI', Arial, sans-serif; line-height:1.6; color:#334155;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f7fc; padding:30px 10px;">
@@ -15,7 +15,7 @@
                         <td style="background: linear-gradient(135deg, #1e3a8a 0%, #0369a1 100%); padding:28px 30px; text-align:center; color:#ffffff;">
                             <div style="font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#bfdbfe; margin-bottom:6px;">SISTEM PENGURUSAN E-SURAU JAWI</div>
                             <h2 style="margin:0; font-size:22px; font-weight:bold; color:#ffffff;">Status Permohonan: Tidak Disahkan</h2>
-                            <div style="font-size:13px; margin-top:4px; color:#e0f2fe;">Peringkat Pentadbir Zon</div>
+                            <div style="font-size:13px; margin-top:4px; color:#e0f2fe;">Peringkat Keputusan Akhir JAWI</div>
                         </td>
                     </tr>
 
@@ -24,7 +24,7 @@
                         <td style="padding:30px;">
                             <p style="margin-top:0;">Assalamu'alaikum WBT dan Salam Sejahtera,</p>
                             <p>Tuan/Puan <strong>{{ $application->pemohon_nama }}</strong>,</p>
-                            <p>Dukacita dimaklumkan bahawa permohonan pendaftaran surau anda telah <strong>DITOLAK / TIDAK DISAHKAN</strong> di peringkat Pentadbir Zon.</p>
+                            <p>Dukacita dimaklumkan bahawa permohonan pendaftaran surau anda telah <strong>DITOLAK / TIDAK DISAHKAN</strong> di peringkat keputusan akhir Pentadbir JAWI selepas lawatan tapak.</p>
 
                             <!-- SUMMARY TABLE -->
                             <table width="100%" cellpadding="10" cellspacing="0" style="border-collapse:collapse; margin:20px 0; font-size:14px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
@@ -51,12 +51,12 @@
 
                             @if($confirmation && $confirmation->catatan)
                                 <div style="background-color:#fef2f2; border-left:4px solid #dc2626; border-top:1px solid #fecaca; border-right:1px solid #fecaca; border-bottom:1px solid #fecaca; padding:16px 18px; margin:20px 0; border-radius:0 8px 8px 0; color:#991b1b;">
-                                    <strong style="font-size:14px;">Sebab / Ulasan Pentadbir Zon:</strong>
+                                    <strong style="font-size:14px;">Sebab / Ulasan Pentadbir JAWI:</strong>
                                     <p style="margin:6px 0 0; font-size:14px; color:#7f1d1d;">{{ $confirmation->catatan }}</p>
                                 </div>
                             @endif
 
-                            <p>Sila log masuk ke Portal e-Surau JAWI untuk menyemak maklumat lanjut atau hubungi Pejabat Pentadbir Zon / JAWI untuk sebarang pertanyaan.</p>
+                            <p>Sila log masuk ke Portal e-Surau JAWI untuk menyemak maklumat lanjut atau hubungi Pejabat JAWI untuk sebarang pertanyaan.</p>
 
                             <!-- CTA BUTTON -->
                             <div style="text-align:center; margin:30px 0;">

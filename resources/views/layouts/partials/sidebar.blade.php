@@ -8,7 +8,6 @@
     $isAdmin     = in_array($activeRole, ['admin', 'pentadbir sistem']);
     $isJawi      = in_array($activeRole, ['jawi', 'pentadbir jawi']);
     $isMasjid    = in_array($activeRole, ['masjid', 'pentadbir masjid']);
-    $isZon       = in_array($activeRole, ['zon', 'pentadbir zon']);
     $isAdminOrJawi = $isAdmin || $isJawi;
 
     $pendingCount = 0;
@@ -102,22 +101,17 @@
                         <span>Pengesahan Permohonan</span>
                     </a>
                 </li>
-            @endif
-
-            {{-- ── PENTADBIR ZON ── --}}
-            @if($isZon)
-                <li class="sidebar-section-label mt-3">Pengurusan Zon</li>
                 <li>
-                    <a href="{{ route('admin.permohonan.index') }}"
-                       class="sidebar-nav-link {{ $isRoute('admin.permohonan.*') ? 'active' : '' }}">
-                        <i class="fa-solid fa-map-location-dot nav-icon"></i>
-                        <span>Permohonan Zon</span>
+                    <a href="{{ route('admin.jawi.surau.index') }}"
+                       class="sidebar-nav-link {{ $isRoute('admin.jawi.surau.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-kaaba nav-icon"></i>
+                        <span>Senarai Surau</span>
                     </a>
                 </li>
             @endif
 
             {{-- ── PENTADBIR SURAU ── --}}
-            @if(!$isAdmin && !$isJawi && !$isMasjid && !$isZon)
+            @if(!$isAdmin && !$isJawi && !$isMasjid)
                 <li class="sidebar-section-label mt-3">Surau Saya</li>
                 <li>
                     <a href="{{ route('dashboard') }}"
@@ -126,6 +120,42 @@
                         <span>Maklumat Surau</span>
                     </a>
                 </li>
+                @if(\App\Models\SurauPertukaranPentadbir::where('kepada_user_id', auth()->id())->aktif()->exists()
+                    || request()->routeIs('pertukaran-pentadbir.*'))
+                    <li>
+                        <a href="{{ route('pertukaran-pentadbir.index') }}"
+                           class="sidebar-nav-link {{ $isRoute('pertukaran-pentadbir.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-user-shield nav-icon"></i>
+                            <span>Serah Tugas Pentadbir</span>
+                        </a>
+                    </li>
+                @endif
+                @if(\App\Models\Surau::where('user_id', auth()->id())->exists())
+                    <li>
+                        <a href="{{ route('surau.maklumat.edit') }}"
+                           class="sidebar-nav-link {{ $isRoute('surau.maklumat.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-pen-to-square nav-icon"></i>
+                            <span>Kemaskini Maklumat Surau</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('surau.agm.index') }}"
+                           class="sidebar-nav-link {{ $isRoute('surau.agm.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-people-roof nav-icon"></i>
+                            <span>Mesyuarat Agung Tahunan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('surau.jawatankuasa.edit') }}"
+                           class="sidebar-nav-link {{ $isRoute('surau.jawatankuasa.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-users nav-icon"></i>
+                            <span>Maklumat Jawatankuasa</span>
+                            @unless(auth()->user()->activeSurau()?->agmSesi()->exists())
+                                <i class="fa-solid fa-lock ms-auto small text-muted" title="Rekod Mesyuarat AGM terlebih dahulu"></i>
+                            @endunless
+                        </a>
+                    </li>
+                @endif
             @endif
 
 

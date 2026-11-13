@@ -129,7 +129,8 @@ class AdminPermohonanController extends Controller
         return back()->with('success', $mesej);
     }
 
-    // 2. Kelulusan / Pengesahan Pentadbir Zon Selepas Lawatan Tapak
+    // 2. Keputusan Akhir Selepas Lawatan Tapak (oleh Pentadbir JAWI / Pentadbir Sistem)
+    //    Rekod disimpan sebagai peringkat 'ZON' dalam application_confirmations (nama dalaman)
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -169,7 +170,7 @@ class AdminPermohonanController extends Controller
             // B. Semak sama ada temujanji lawatan tapak telah diatur / dibuat
             $hasAppointment = $application->appointment !== null || $application->appointments->isNotEmpty();
             if (!$hasAppointment) {
-                return back()->with('error', 'Gagal meluluskan permohonan! Lawatan tapak belum diatur. Pentadbir Zon hanya boleh meluluskan permohonan selepas lawatan tapak dibuat.');
+                return back()->with('error', 'Gagal meluluskan permohonan! Lawatan tapak belum diatur. Permohonan hanya boleh diluluskan selepas lawatan tapak dibuat.');
             }
         }
 
@@ -254,6 +255,9 @@ class AdminPermohonanController extends Controller
             $application->user_id = $user->id;
             $application->save();
 
+            // Wujudkan / kemaskini rekod rasmi surau (jadual suraus)
+            \App\Models\Surau::syncFromApprovedApplication($application, $previousApproved);
+
             // Serahan pentadbir: pentadbir lama kehilangan peranan surau jika tidak lagi mentadbir surau lain
             $previousAdmin = $previousApproved?->user;
             if ($previousAdmin && (int) $previousAdmin->id !== (int) $user->id) {
@@ -277,7 +281,7 @@ class AdminPermohonanController extends Controller
             if (!empty($pemohonEmail) && filter_var($pemohonEmail, FILTER_VALIDATE_EMAIL)) {
                 // Senarai kesemua pentadbir (admin, jawi, zon, masjid)
                 $allAdminEmails = User::whereHas('roles', function ($q) {
-                    $q->whereIn('slug', ['admin', 'jawi', 'zon', 'masjid']);
+                    $q->whereIn('slug', ['admin', 'jawi', 'masjid']);
                 })
                 ->where('is_active', true)
                 ->whereNotNull('email')
@@ -378,14 +382,14 @@ class AdminPermohonanController extends Controller
 
             return redirect()->route('admin.permohonan.show', $application->id)
                 ->with('success', $alreadyActivated
-                    ? 'Permohonan telah berjaya DILULUSKAN oleh Pentadbir Zon. E-mel kelulusan telah dihantar kepada Pentadbir Surau.'
-                    : 'Permohonan telah berjaya DILULUSKAN oleh Pentadbir Zon. Maklumat pemohon telah didaftarkan sebagai pengguna sistem, dan 2 e-mel (Kelulusan & Pautan Pengaktifan) telah dikeluarkan.');
+                    ? 'Permohonan telah berjaya DILULUSKAN oleh Pentadbir JAWI. E-mel kelulusan telah dihantar kepada Pentadbir Surau.'
+                    : 'Permohonan telah berjaya DILULUSKAN oleh Pentadbir JAWI. Maklumat pemohon telah didaftarkan sebagai pengguna sistem, dan 2 e-mel (Kelulusan & Pautan Pengaktifan) telah dikeluarkan.');
         } else {
             // Status REJECTED:
             $pemohonEmail = trim($application->pemohon_email ?? '');
             if (!empty($pemohonEmail) && filter_var($pemohonEmail, FILTER_VALIDATE_EMAIL)) {
                 $allAdminEmails = User::whereHas('roles', function ($q) {
-                    $q->whereIn('slug', ['admin', 'jawi', 'zon', 'masjid']);
+                    $q->whereIn('slug', ['admin', 'jawi', 'masjid']);
                 })
                 ->where('is_active', true)
                 ->whereNotNull('email')
@@ -408,7 +412,7 @@ class AdminPermohonanController extends Controller
             }
 
             return redirect()->route('admin.permohonan.show', $application->id)
-                ->with('success', 'Status permohonan telah dikemaskini kepada DITOLAK oleh Pentadbir Zon.');
+                ->with('success', 'Status permohonan telah dikemaskini kepada DITOLAK oleh Pentadbir JAWI.');
         }
     }
 
@@ -418,6 +422,10 @@ class AdminPermohonanController extends Controller
             'application_id' => 'required|exists:applications,id',
             'fail_minit' => 'required|file|mimes:pdf|max:5000',
         ]);
+
+        // Hanya pemilik permohonan boleh memuat naik minit bagi permohonan tersebut
+        $application = Application::findOrFail($request->application_id);
+        abort_unless((int) $application->user_id === (int) Auth::id(), 403, 'Anda tidak dibenarkan memuat naik minit bagi permohonan ini.');
 
         if ($request->hasFile('fail_minit')) {
             $path = $request->file('fail_minit')->store('minit_mesyuarat', 'public');

@@ -23,7 +23,7 @@ class PermohonanDitolakZonMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Permohonan Pendaftaran Surau Ditolak oleh Pentadbir Zon - '
+            subject: 'Permohonan Pendaftaran Surau Ditolak oleh Pentadbir JAWI - '
                 . $this->application->reference_no,
         );
     }

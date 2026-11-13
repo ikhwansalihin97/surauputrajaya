@@ -47,11 +47,6 @@ class RoleAndUserSeeder extends Seeder
             ['name' => 'Pentadbir JAWI']
         );
 
-        $zonRole = Role::updateOrCreate(
-            ['slug' => 'zon'],
-            ['name' => 'Pentadbir Pusat Zon']
-        );
-
         $surauRole = Role::updateOrCreate(
             ['slug' => 'surau'],
             ['name' => 'Pentadbir Surau']
@@ -91,7 +86,6 @@ class RoleAndUserSeeder extends Seeder
             $adminRole->id,
             $masjidRole->id,
             $jawiRole->id,
-            $zonRole->id,
             $surauRole->id,
         ]);
 
@@ -161,40 +155,6 @@ class RoleAndUserSeeder extends Seeder
 
         $masjidUser->roles()->sync([
             $masjidRole->id,
-        ]);
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | 6. Pentadbir Pusat Zon
-        |--------------------------------------------------------------------------
-        */
-
-        $zonUser = User::updateOrCreate(
-            [
-                'email' => 'zon@surau.com',
-            ],
-            [
-                'name' => 'Pegawai Zon',
-                'no_kad_pengenalan' => '820404-10-4567',
-                'jawatan' => 'Pegawai Hal Ehwal Islam',
-                'gred' => 'S9',
-                'skim_perkhidmatan' => 'Pegawai Hal Ehwal Islam',
-                'status_perkhidmatan' => 'TETAP',
-                'no_telefon_pejabat' => '03-8888 2000',
-                'sambungan' => '2000',
-                'no_telefon_bimbit' => '016-6789012',
-
-                'agency_id' => $jawi->id,
-                'department_id' => $bpmps->id,
-
-                'password' => Hash::make('password123'),
-                'is_active' => true,
-            ]
-        );
-
-        $zonUser->roles()->sync([
-            $zonRole->id,
         ]);
     }
 }
