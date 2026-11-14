@@ -205,8 +205,10 @@ class PertukaranPentadbirService
     {
         $pertukaran->update(['status' => $status, 'diputuskan_at' => now()]);
 
+        // Akaun mungkin dicipta oleh permintaan surau lain (calon yang sama dipilih oleh beberapa surau)
         $akaun = $pertukaran->kepada;
-        if (!$pertukaran->akaun_baharu || !$akaun || empty($akaun->activation_token)) {
+        if (!$akaun || empty($akaun->activation_token)
+            || !SurauPertukaranPentadbir::where('kepada_user_id', $akaun->id)->where('akaun_baharu', true)->exists()) {
             return;
         }
 
