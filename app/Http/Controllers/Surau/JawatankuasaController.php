@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Surau;
 
 use App\Http\Controllers\Controller;
 use App\Models\Surau;
+use App\Models\SurauAgmMesyuarat;
 use App\Models\SurauAgmSesi;
 use App\Models\SurauCommittee;
 use Illuminate\Http\Request;
@@ -43,6 +44,14 @@ class JawatankuasaController extends Controller
         $sesi  = $this->sesiSemasaAtauLencong($surau);
         if (!$sesi instanceof SurauAgmSesi) {
             return $sesi;
+        }
+
+        // Senarai AJK sesi dikunci semasa menunggu / selepas disahkan JAWI (Keputusan Mesyuarat Bil. 1)
+        $bil1 = SurauAgmMesyuarat::where('agm_sesi_id', $sesi->id)->where('bilangan', 1)->first();
+        if ($bil1 && !$bil1->bolehUbah('ajk')) {
+            return back()->with('error', $bil1->status_pengesahan === 'DISAHKAN'
+                ? "Senarai AJK sesi {$sesi->label} telah disahkan oleh JAWI dan tidak boleh dikemaskini."
+                : "Senarai AJK sesi {$sesi->label} sedang menunggu pengesahan JAWI dan tidak boleh dikemaskini.");
         }
 
         $wajib   = SurauCommittee::JAWATAN_WAJIB;
@@ -115,6 +124,8 @@ class JawatankuasaController extends Controller
                 $surau->semuaCommittees()->create($row + ['agm_sesi_id' => $sesi->id]);
             }
         });
+
+        $bil1?->tandaDibetulkan('ajk');
 
         activity()
             ->useLog('surau')

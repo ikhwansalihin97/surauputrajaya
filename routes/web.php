@@ -25,6 +25,9 @@ use App\Http\Controllers\Surau\AgmController as SurauAgmController;
 use App\Http\Controllers\Surau\JemputanAgmController as SurauJemputanAgmController;
 use App\Http\Controllers\Surau\KehadiranAgmController as SurauKehadiranAgmController;
 use App\Http\Controllers\Surau\KeputusanAgmController as SurauKeputusanAgmController;
+use App\Http\Controllers\Surau\PengesahanAgmController as SurauPengesahanAgmController;
+use App\Http\Controllers\Jawi\PengesahanAgmController as JawiPengesahanAgmController;
+use App\Http\Controllers\Jawi\TetapanSuratController as JawiTetapanSuratController;
 use App\Http\Controllers\PertukaranPentadbirController;
 
 
@@ -161,6 +164,10 @@ Route::middleware('auth')->group(function () {
                 '/kata-laluan',
                 [ProfileController::class, 'updatePassword']
             )->name('password');
+
+            // Tandatangan untuk surat yang diluluskan / dihantar (disimpan secara peribadi)
+            Route::put('/tandatangan', [ProfileController::class, 'updateTandatangan'])->name('tandatangan');
+            Route::get('/tandatangan/imej', [ProfileController::class, 'imejTandatangan'])->name('tandatangan.imej');
         });
 
 
@@ -210,8 +217,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/surau/agm/{mesyuarat}/keputusan', [SurauKeputusanAgmController::class, 'index'])->name('surau.agm.keputusan.index');
         Route::post('/surau/agm/{mesyuarat}/keputusan/dokumen', [SurauKeputusanAgmController::class, 'dokumen'])->name('surau.agm.keputusan.dokumen');
         Route::post('/surau/agm/{mesyuarat}/keputusan/pentadbir', [SurauKeputusanAgmController::class, 'pentadbir'])->name('surau.agm.keputusan.pentadbir');
-        Route::post('/surau/agm/{mesyuarat}/keputusan/pentadbir/hantar-semula', [SurauKeputusanAgmController::class, 'hantarSemula'])->name('surau.agm.keputusan.hantarSemula');
-        Route::post('/surau/agm/{mesyuarat}/keputusan/pentadbir/batal', [SurauKeputusanAgmController::class, 'batal'])->name('surau.agm.keputusan.batal');
+
+        // Langkah 5: Status Pengesahan JAWI (serah tugas pentadbir dimulakan selepas disahkan)
+        Route::get('/surau/agm/{mesyuarat}/pengesahan', [SurauPengesahanAgmController::class, 'index'])->name('surau.agm.pengesahan.index');
+        Route::post('/surau/agm/{mesyuarat}/pengesahan', [SurauPengesahanAgmController::class, 'hantar'])->name('surau.agm.pengesahan.hantar');
+        Route::post('/surau/agm/{mesyuarat}/pengesahan/serah-tugas/hantar-semula', [SurauPengesahanAgmController::class, 'hantarSemulaSerahTugas'])->name('surau.agm.pengesahan.hantarSemulaSerahTugas');
+        Route::post('/surau/agm/{mesyuarat}/pengesahan/pilih-semula', [SurauPengesahanAgmController::class, 'pilihSemula'])->name('surau.agm.pengesahan.pilihSemula');
+        Route::get('/surau/agm/{mesyuarat}/pengesahan/surat-pentauliahan', [SurauPengesahanAgmController::class, 'suratPentauliahan'])->name('surau.agm.pengesahan.surat');
 
         // Tukar surau aktif (pengguna yang mentadbir beberapa surau)
         Route::post('/surau/pilih/{surau}', [SurauJawatankuasaController::class, 'pilih'])
@@ -602,6 +614,16 @@ Route::middleware('auth')->group(function () {
                 Route::get('/surau', [JawiSurauController::class, 'index'])->name('surau.index');
                 Route::get('/surau/daftar', [JawiSurauController::class, 'create'])->name('surau.create');
                 Route::post('/surau', [JawiSurauController::class, 'store'])->name('surau.store');
+
+                // Pengesahan Keputusan Mesyuarat AGM surau (minit, AJK, pentadbir / laporan kewangan)
+                Route::get('/agm', [JawiPengesahanAgmController::class, 'index'])->name('agm.index');
+                Route::get('/agm/{mesyuarat}', [JawiPengesahanAgmController::class, 'show'])->name('agm.show');
+                Route::post('/agm/{mesyuarat}/keputusan', [JawiPengesahanAgmController::class, 'putuskan'])->name('agm.putuskan');
+                Route::get('/agm/{mesyuarat}/surat-pentauliahan', [JawiPengesahanAgmController::class, 'suratPentauliahan'])->name('agm.surat');
+
+                // Tetapan surat (kepala surat, no. rujukan fail, salinan kepada)
+                Route::get('/tetapan-surat', [JawiTetapanSuratController::class, 'edit'])->name('tetapan-surat.edit');
+                Route::put('/tetapan-surat', [JawiTetapanSuratController::class, 'update'])->name('tetapan-surat.update');
 
                 // Keputusan akhir selepas lawatan tapak (menggantikan Pentadbir Zon)
                 Route::put(

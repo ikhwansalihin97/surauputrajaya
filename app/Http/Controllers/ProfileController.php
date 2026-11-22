@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
@@ -76,5 +78,57 @@ class ProfileController extends Controller
 
         return redirect()->route('profile.edit')
             ->with('password_success', 'Kata laluan anda telah berjaya ditukar.');
+    }
+
+    /**
+     * Tandatangan pengguna (dilukis atau dimuat naik) dan baris di bawah nama dalam surat.
+     * Imej disimpan dalam storan peribadi (bukan awam).
+     */
+    public function updateTandatangan(Request $request)
+    {
+        $request->validate([
+            'tandatangan_lukisan' => ['nullable', 'string', 'max:2000000'],
+            'tandatangan_fail'    => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:2048'],
+            'blok_tandatangan'    => ['nullable', 'string', 'max:500'],
+            'buang_tandatangan'   => ['nullable', 'boolean'],
+        ], [
+            'tandatangan_fail.image' => 'Fail tandatangan mestilah imej PNG atau JPG.',
+            'tandatangan_fail.max'   => 'Saiz fail tandatangan tidak boleh melebihi 2MB.',
+        ]);
+
+        $user = Auth::user();
+        $baharu = null;
+
+        if ($request->hasFile('tandatangan_fail')) {
+            $baharu = $request->file('tandatangan_fail')->store('tandatangan', 'local');
+        } elseif ($lukisan = $request->input('tandatangan_lukisan')) {
+            $png = preg_match('#^data:image/png;base64,([A-Za-z0-9+/=]+)$#', $lukisan, $m) ? base64_decode($m[1], true) : false;
+            $sah = $png && str_starts_with($png, "\x89PNG\r\n\x1a\n") && (@getimagesizefromstring($png)[2] ?? null) === IMAGETYPE_PNG;
+            if (!$sah) {
+                return back()->withErrors(['tandatangan_lukisan' => 'Lukisan tandatangan tidak sah. Sila cuba lagi.']);
+            }
+            $baharu = 'tandatangan/' . Str::random(40) . '.png';
+            Storage::disk('local')->put($baharu, $png);
+        }
+
+        $data = ['blok_tandatangan' => trim((string) $request->input('blok_tandatangan')) ?: null];
+        if ($baharu || $request->boolean('buang_tandatangan')) {
+            if ($user->tandatangan_path) {
+                Storage::disk('local')->delete($user->tandatangan_path);
+            }
+            $data['tandatangan_path'] = $baharu;
+        }
+        $user->update($data);
+
+        return redirect()->to(route('profile.edit') . '#tandatangan')
+            ->with('tandatangan_success', 'Tandatangan anda telah disimpan.');
+    }
+
+    public function imejTandatangan()
+    {
+        $laluan = Auth::user()->tandatangan_path;
+        abort_unless($laluan && Storage::disk('local')->exists($laluan), 404);
+
+        return response()->file(Storage::disk('local')->path($laluan), ['Cache-Control' => 'private, no-store']);
     }
 }
