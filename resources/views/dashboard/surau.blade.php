@@ -151,17 +151,6 @@
                 </div>
             </div>
             <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                @if(isset($surau) && $surau)
-                    <a href="{{ route('surau.maklumat.edit') }}" class="btn btn-sm btn-light fw-semibold shadow-sm me-1 mb-2 mb-lg-0">
-                        <i class="fa-solid fa-pen-to-square me-1"></i> Kemaskini Maklumat Surau
-                    </a>
-                    <a href="{{ route('surau.agm.index') }}" class="btn btn-sm btn-light fw-semibold shadow-sm me-1 mb-2 mb-lg-0">
-                        <i class="fa-solid fa-people-roof me-1"></i> Mesyuarat AGM
-                    </a>
-                    <a href="{{ route('surau.jawatankuasa.edit') }}" class="btn btn-sm btn-light fw-semibold shadow-sm me-1 mb-2 mb-lg-0">
-                        <i class="fa-solid fa-users me-1"></i> Maklumat AJK
-                    </a>
-                @endif
                 <span class="badge fw-bold px-3 py-2 shadow-sm rounded-2"
                       style="background-color:{{ $hdrBg }};color:{{ $hdrColor }};border:1px solid {{ $hdrColor }}40;font-size:0.83rem;letter-spacing:0.05em;">
                     <i class="fa-solid {{ $hdrIcon }} me-1"></i> {{ $hdrLabel }}
@@ -184,58 +173,7 @@
         </div>
     @endif
 
-    @if($application->status === 'APPROVED' && (int) $application->user_id === (int) auth()->id())
-        @php
-            $revStatus = $revision?->status;
-            [$revColor, $revIcon, $revText] = match($revStatus) {
-                'DRAFT'    => ['#d97706', 'fa-file-pen', 'Draf kemaskini belum dihantar. Rekod rasmi surau tidak berubah sehingga kemaskini dihantar dan diluluskan.'],
-                'PENDING'  => ['#0369a1', 'fa-hourglass-half', 'Kemaskini sedang dalam proses pengesahan Pentadbir Masjid dan JAWI. Rekod rasmi kekal sehingga ia diluluskan.'],
-                'REJECTED' => ['#dc2626', 'fa-circle-xmark', 'Kemaskini terakhir telah ditolak. Rekod rasmi surau tidak berubah. Anda boleh membuat kemaskini baharu.'],
-                default    => ['#1e40af', 'fa-pen-to-square', 'Tukar Pentadbir Surau atau kemaskini dokumen. Perubahan ini perlu diluluskan semula. Maklumat surau dan senarai AJK boleh dikemaskini terus melalui menu Kemaskini Maklumat Surau dan Maklumat Jawatankuasa.'],
-            };
-        @endphp
-        <div class="card border-0 shadow-sm rounded-3 mb-4" style="border-left:4px solid {{ $revColor }} !important;">
-            <div class="card-body p-3 p-md-4 d-flex flex-column flex-md-row align-items-md-center gap-3">
-                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                     style="width:44px;height:44px;background-color:{{ $revColor }}1a;color:{{ $revColor }};">
-                    <i class="fa-solid {{ $revIcon }}"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <div class="fw-bold" style="font-size:0.9rem;color:#0f172a;">
-                        Kemaskini AJK &amp; Pentadbir Surau
-                        @if($revision)
-                            <span class="badge ms-1 font-monospace" style="background-color:{{ $revColor }}1a;color:{{ $revColor }};border:1px solid {{ $revColor }}40;">{{ $revision->reference_no }}</span>
-                        @endif
-                    </div>
-                    <div class="text-muted small mt-1">{{ $revText }}</div>
-                    @if($revision)
-                        <div class="text-muted mt-1" style="font-size:0.75rem;">
-                            {{ $revStatus === 'DRAFT' ? 'Disimpan' : 'Dihantar' }}:
-                            {{ ($revStatus === 'DRAFT' ? $revision->updated_at : ($revision->submitted_at ?? $revision->updated_at))?->format('d/m/Y h:i A') }}
-                        </div>
-                    @endif
-                </div>
-                <div class="flex-shrink-0">
-                    @if($revStatus === 'DRAFT')
-                        <a href="{{ route('surau.kemaskini.edit', $revision->id) }}" class="btn btn-sm fw-semibold px-3" style="background-color:#d97706;color:#fff;">
-                            <i class="fa-solid fa-pen me-1"></i> Sambung Draf
-                        </a>
-                    @elseif($revStatus === 'PENDING')
-                        <a href="{{ route('permohonan.semak', ['reference_no' => $revision->reference_no]) }}" class="btn btn-sm btn-outline-primary fw-semibold px-3">
-                            <i class="fa-solid fa-magnifying-glass me-1"></i> Semak Status
-                        </a>
-                    @else
-                        <form action="{{ route('surau.kemaskini.start') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-primary fw-semibold px-3">
-                                <i class="fa-solid fa-pen-to-square me-1"></i> Kemaskini Maklumat
-                            </button>
-                        </form>
-                    @endif
-                </div>
-            </div>
-        </div>
-    @endif
+    {{-- Kad "Kemaskini AJK & Pentadbir Surau" dibuang: maklumat surau, AJK dan pentadbir dikemaskini melalui menu Kemaskini Maklumat Surau dan modul AGM --}}
 
     {{-- ── 2. Status Tracker (Horizontal Stepper) ── --}}
     <div class="card border-0 shadow-sm rounded-3 mb-4">
@@ -372,72 +310,9 @@
     {{-- ── 3. Minit Mesyuarat Section ── --}}
     <div class="row g-3">
 
-        {{-- Upload Form --}}
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-3 h-100 hover-lift">
-                <div class="card-header py-3" style="background: linear-gradient(135deg, #1e40af 0%, #0284c7 100%); border-bottom:none; border-radius: 12px 12px 0 0;">
-                    <div class="fw-bold text-white" style="font-size:0.875rem;">
-                        <i class="fa-solid fa-file-arrow-up me-2"></i>Muat Naik Minit Mesyuarat Agung (AGM)
-                    </div>
-                </div>
-                <div class="card-body p-4">
-                    @if(session('success'))
-                        <div class="alert alert-success border-0 rounded-2 py-2 px-3 mb-3 d-flex align-items-center gap-2" style="font-size:0.82rem;background-color:#f0fdf4;color:#16a34a;">
-                            <i class="fa-solid fa-circle-check flex-shrink-0"></i>
-                            <span>{{ session('success') }}</span>
-                        </div>
-                    @endif
-
-                    @if($errors->any())
-                        <div class="alert alert-danger border-0 rounded-2 py-2 px-3 mb-3" style="font-size:0.80rem;background-color:#fef2f2;color:#dc2626;">
-                            <ul class="mb-0 ps-3">
-                                @foreach($errors->all() as $err)
-                                    <li>{{ $err }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-
-                    <form action="{{ route('admin.minit.upload') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="application_id" value="{{ $application->id }}">
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold small text-dark">Tahun Mesyuarat Agung (AGM)</label>
-                            <input type="number"
-                                   name="tahun_minit"
-                                   class="form-control form-control-sm font-monospace"
-                                   value="{{ old('tahun_minit', date('Y')) }}"
-                                   min="2000"
-                                   max="{{ date('Y') + 1 }}"
-                                   required>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold small text-dark">Fail Minit Mesyuarat (PDF)</label>
-                            <input type="file"
-                                   name="fail_minit"
-                                   class="form-control form-control-sm"
-                                   accept=".pdf"
-                                   required>
-                            <div class="form-text" style="font-size:0.72rem;color:#94a3b8;">
-                                Format: PDF sahaja. Saiz maksimum fail: 5MB.
-                            </div>
-                        </div>
-
-                        <button type="submit"
-                                class="btn w-100 fw-bold py-2 shadow-sm rounded-2 text-white hover-lift"
-                                style="background-color:#1e40af;border:none;font-size:0.83rem;">
-                            <i class="fa-solid fa-cloud-arrow-up me-1"></i>
-                            Hantar Minit Untuk Semakan JAWI
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
+        {{-- Minit AGM kini dimuat naik melalui modul Mesyuarat Agung Tahunan (Keputusan Mesyuarat) --}}
         {{-- Senarai Minit --}}
-        <div class="col-lg-7">
+        <div class="col-12">
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between" style="border-bottom:2px solid #eff6ff;">
                     <div class="fw-bold" style="font-size:0.875rem;color:#0f172a;">

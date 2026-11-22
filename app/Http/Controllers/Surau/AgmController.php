@@ -123,6 +123,10 @@ class AgmController extends Controller
     {
         $surau = $this->activeSurau();
         $this->authorizeMesyuarat($surau, $mesyuarat);
+        if ($mesyuarat->dikunciPengesahan()) {
+            return redirect()->route('surau.agm.index')
+                ->with('error', 'Mesyuarat ini telah dihantar untuk pengesahan JAWI dan tidak boleh dikemaskini.');
+        }
 
         // Sesi & bilangan tidak boleh diubah selepas direkodkan
         $request->merge([
@@ -147,6 +151,10 @@ class AgmController extends Controller
     {
         $surau = $this->activeSurau();
         $this->authorizeMesyuarat($surau, $mesyuarat);
+        if ($mesyuarat->dikunciPengesahan()) {
+            return redirect()->route('surau.agm.index')
+                ->with('error', 'Mesyuarat ini telah dihantar untuk pengesahan JAWI dan tidak boleh dipadam.');
+        }
 
         $sesi  = $mesyuarat->sesi;
         $label = "Bil. {$mesyuarat->bilangan} ({$mesyuarat->tahun}) sesi {$sesi->label}";

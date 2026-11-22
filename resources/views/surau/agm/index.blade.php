@@ -34,6 +34,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
+    @if(session('error'))
+        <div class="alert alert-danger border-0 shadow-sm mb-4 alert-dismissible fade show">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
     @if(session('info'))
         <div class="alert alert-warning border-0 shadow-sm mb-4">
             <i class="fa-solid fa-circle-info me-2"></i> {{ session('info') }}
@@ -69,7 +75,12 @@
                                     <span class="badge {{ $m ? 'bg-success' : 'bg-secondary-subtle text-secondary-emphasis' }}">
                                         Bil. {{ $bil }} ({{ $sesi->tahunBagi($bil) }})
                                     </span>
-                                    @if($m)
+                                    @if($m && $m->dikunciPengesahan())
+                                        @php [$lbl, $cls, $ikon] = $m->labelStatusPengesahan(); @endphp
+                                        <a href="{{ route('surau.agm.pengesahan.index', $m) }}" class="badge {{ $cls }} text-decoration-none" title="Lihat status pengesahan JAWI">
+                                            <i class="fa-solid {{ $ikon }} me-1"></i>{{ $lbl }}
+                                        </a>
+                                    @elseif($m)
                                         <div class="d-flex gap-1">
                                             <a href="{{ route('surau.agm.edit', $m) }}" class="btn btn-sm btn-outline-primary" title="Kemaskini">
                                                 <i class="fa-solid fa-pen"></i>
@@ -99,6 +110,12 @@
                                             <a href="{{ route('surau.agm.keputusan.index', $m) }}" class="btn btn-sm btn-outline-dark fw-semibold mb-1">
                                                 <i class="fa-solid fa-gavel me-1"></i> Keputusan
                                                 @if($m->minit_path)<i class="fa-solid fa-circle-check text-success ms-1" title="Minit dimuat naik"></i>@endif
+                                            </a>
+                                        @endif
+                                        @if($m->status_pengesahan)
+                                            <a href="{{ route('surau.agm.pengesahan.index', $m) }}" class="btn btn-sm btn-outline-success fw-semibold mb-1">
+                                                <i class="fa-solid fa-stamp me-1"></i> Pengesahan
+                                                @if($m->status_pengesahan === 'PERLU_PEMBETULAN')<i class="fa-solid fa-circle-exclamation text-danger ms-1" title="Perlu pembetulan"></i>@endif
                                             </a>
                                         @endif
                                     </div>

@@ -108,18 +108,29 @@
                         <span>Senarai Surau</span>
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('admin.jawi.tetapan-surat.edit') }}"
+                       class="sidebar-nav-link {{ $isRoute('admin.jawi.tetapan-surat.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-envelope-open-text nav-icon"></i>
+                        <span>Tetapan Surat</span>
+                    </a>
+                </li>
+                <li>
+                    @php $agmMenunggu = \App\Models\SurauAgmMesyuarat::where('status_pengesahan', 'MENUNGGU')->count(); @endphp
+                    <a href="{{ route('admin.jawi.agm.index') }}"
+                       class="sidebar-nav-link {{ $isRoute('admin.jawi.agm.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-stamp nav-icon"></i>
+                        <span>Pengesahan AGM</span>
+                        @if($agmMenunggu)
+                            <span class="badge bg-warning text-dark ms-auto">{{ $agmMenunggu }}</span>
+                        @endif
+                    </a>
+                </li>
             @endif
 
             {{-- ── PENTADBIR SURAU ── --}}
             @if(!$isAdmin && !$isJawi && !$isMasjid)
                 <li class="sidebar-section-label mt-3">Surau Saya</li>
-                <li>
-                    <a href="{{ route('dashboard') }}"
-                       class="sidebar-nav-link {{ $isRoute('dashboard') ? 'active' : '' }}">
-                        <i class="fa-solid fa-kaaba nav-icon"></i>
-                        <span>Maklumat Surau</span>
-                    </a>
-                </li>
                 @if(\App\Models\SurauPertukaranPentadbir::where('kepada_user_id', auth()->id())->aktif()->exists()
                     || request()->routeIs('pertukaran-pentadbir.*'))
                     <li>

@@ -15,6 +15,8 @@ class User extends Authenticatable
     use Notifiable, LogsActivity;
 
     protected $fillable = [
+        'tandatangan_path',
+        'blok_tandatangan',
         'name',
         'no_kad_pengenalan',
         'jawatan',

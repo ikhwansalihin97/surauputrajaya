@@ -277,6 +277,86 @@
                 </div>
             </div>
 
+            {{-- ── TANDATANGAN ── --}}
+            <div class="card border-0 shadow-sm rounded-3 mt-4" id="tandatangan">
+                <div class="card-body p-4">
+                    <div class="fw-bold text-primary border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-signature me-1"></i> Tandatangan Surat
+                    </div>
+                    <p class="small text-muted">Digunakan pada surat yang anda luluskan atau hantar melalui sistem (cth. Surat Pentauliahan AJK).</p>
+
+                    @if(session('tandatangan_success'))
+                        <div class="alert alert-success border-0 small py-2 mb-3"><i class="fa-solid fa-circle-check me-1"></i> {{ session('tandatangan_success') }}</div>
+                    @endif
+                    @if($errors->has('tandatangan_lukisan') || $errors->has('tandatangan_fail'))
+                        <div class="alert alert-danger border-0 small py-2 mb-3">{{ $errors->first('tandatangan_lukisan') ?: $errors->first('tandatangan_fail') }}</div>
+                    @endif
+
+                    <form action="{{ route('profile.tandatangan') }}" method="POST" enctype="multipart/form-data" id="formTandatangan">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="tandatangan_lukisan" id="ttdLukisan">
+
+                        @if($user->tandatangan_path)
+                            <div class="small fw-semibold mb-1">Tandatangan semasa</div>
+                            <div class="border rounded-2 p-2 mb-2 text-center bg-white">
+                                <img src="{{ route('profile.tandatangan.imej') }}?v={{ md5($user->tandatangan_path) }}" style="max-height:70px; max-width:100%;" alt="Tandatangan">
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="buang_tandatangan" value="1" id="buangTtd">
+                                <label class="form-check-label small" for="buangTtd">Buang tandatangan</label>
+                            </div>
+                        @endif
+
+                        <ul class="nav nav-tabs nav-fill small mb-2" role="tablist">
+                            <li class="nav-item"><button type="button" class="nav-link active py-1" data-bs-toggle="tab" data-bs-target="#ttdTabLukis">Lukis</button></li>
+                            <li class="nav-item"><button type="button" class="nav-link py-1" data-bs-toggle="tab" data-bs-target="#ttdTabFail">Muat Naik</button></li>
+                        </ul>
+                        <div class="tab-content mb-3">
+                            <div class="tab-pane fade show active" id="ttdTabLukis">
+                                <canvas id="ttdKanvas" height="140" class="border rounded-2 w-100 bg-white" style="touch-action:none; cursor:crosshair;"></canvas>
+                                <div class="d-flex justify-content-between small mt-1">
+                                    <span class="text-muted">Lukis tandatangan anda di atas</span>
+                                    <a href="#" id="ttdPadam" class="text-decoration-none">Padam</a>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="ttdTabFail">
+                                <input type="file" name="tandatangan_fail" accept="image/png,image/jpeg" class="form-control form-control-sm">
+                                <div class="small text-muted mt-1">PNG berlatar belakang lut sinar adalah terbaik. Maks. 2MB.</div>
+                            </div>
+                        </div>
+
+                        <label class="form-label fw-semibold small">Baris di bawah nama</label>
+                        <textarea name="blok_tandatangan" rows="3" class="form-control form-control-sm" placeholder="{{ ($user->jawatan ? $user->jawatan . "\n" : '') . \App\Services\SuratPentauliahanService::BLOK_TANDATANGAN_LALAI }}">{{ old('blok_tandatangan', $user->blok_tandatangan) }}</textarea>
+                        <div class="small text-muted mt-1 mb-3">Satu baris bagi setiap baris, cth. jawatan, &ldquo;b.p. Pengarah&rdquo;, jabatan. Kosongkan untuk guna jawatan anda.</div>
+
+                        <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Simpan Tandatangan
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const kanvas = document.getElementById('ttdKanvas');
+    if (!kanvas) return;
+    const ctx = kanvas.getContext('2d');
+    let ada = false, melukis = false;
+    const saiz = () => { kanvas.width = kanvas.clientWidth * 2; kanvas.height = 280; ctx.scale(2, 2); ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0b1f5c'; ada = false; };
+    saiz();
+    const titik = (e) => { const r = kanvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+    kanvas.addEventListener('pointerdown', (e) => { melukis = true; kanvas.setPointerCapture(e.pointerId); ctx.beginPath(); ctx.moveTo(...titik(e)); });
+    kanvas.addEventListener('pointermove', (e) => { if (!melukis) return; ctx.lineTo(...titik(e)); ctx.stroke(); ada = true; });
+    ['pointerup', 'pointerleave'].forEach(ev => kanvas.addEventListener(ev, () => { melukis = false; }));
+    document.getElementById('ttdPadam').addEventListener('click', (e) => { e.preventDefault(); ctx.clearRect(0, 0, kanvas.width, kanvas.height); ada = false; });
+    document.getElementById('formTandatangan').addEventListener('submit', () => {
+        const lukisAktif = document.getElementById('ttdTabLukis').classList.contains('active');
+        document.getElementById('ttdLukisan').value = (lukisAktif && ada) ? kanvas.toDataURL('image/png') : '';
+    });
+});
+</script>
+
         </div>
 
     </div>

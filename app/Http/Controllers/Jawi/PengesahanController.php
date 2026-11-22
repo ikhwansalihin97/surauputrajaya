@@ -142,7 +142,22 @@ class PengesahanController extends Controller
             $jataBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($jataPath));
         }
 
-        $pdf = Pdf::loadView('pdf.borang_permohonan', compact('application', 'jataBase64'))
+        // Tandatangan pegawai yang membuat keputusan pada setiap peringkat (disimpan secara peribadi di Profil)
+        $tandatanganPegawai = function ($pengesahan): ?string {
+            $pegawai = $pengesahan?->confirmedBy;
+            $disk = \Illuminate\Support\Facades\Storage::disk('local');
+            if (!$pengesahan?->confirmed_at || !$pegawai?->tandatangan_path || !$disk->exists($pegawai->tandatangan_path)) {
+                return null;
+            }
+            $laluan = $disk->path($pegawai->tandatangan_path);
+
+            return 'data:' . (mime_content_type($laluan) ?: 'image/png') . ';base64,' . base64_encode(file_get_contents($laluan));
+        };
+        $tandatanganMasjid = $tandatanganPegawai($application->masjidConfirmation);
+        $tandatanganZon    = $tandatanganPegawai($application->zonConfirmation);
+        $tandatanganJawi   = $tandatanganPegawai($application->jawiConfirmation);
+
+        $pdf = Pdf::loadView('pdf.borang_permohonan', compact('application', 'jataBase64', 'tandatanganMasjid', 'tandatanganZon', 'tandatanganJawi'))
             ->setPaper('a4', 'portrait');
 
         $fileName = 'Borang_Permohonan_' . str_replace('/', '_', $application->reference_no) . '.pdf';

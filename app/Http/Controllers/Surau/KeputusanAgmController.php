@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Surau;
 use App\Models\SurauAgmMesyuarat;
 use App\Models\SurauCommittee;
-use App\Services\PertukaranPentadbirService;
+use App\Services\PengesahanAgmService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -14,12 +14,15 @@ use Illuminate\Support\Facades\Storage;
 /**
  * Keputusan Mesyuarat AGM (selepas kehadiran direkodkan).
  *
- * Bil. 1: minit mesyuarat, senarai AJK sesi dan pilihan Pentadbir Surau (serah tugas).
+ * Bil. 1: minit mesyuarat, senarai AJK sesi dan pilihan Pentadbir Surau.
  * Bil. 2: minit mesyuarat dan laporan kewangan. AJK tidak dikemaskini.
+ *
+ * Pilihan pentadbir hanya disimpan di sini. Serah tugas dimulakan selepas JAWI
+ * mengesahkan keputusan (Langkah 5, lihat PengesahanAgmService).
  */
 class KeputusanAgmController extends Controller
 {
-    public function __construct(private PertukaranPentadbirService $pertukaran)
+    public function __construct(private PengesahanAgmService $pengesahan)
     {
     }
 
@@ -32,13 +35,15 @@ class KeputusanAgmController extends Controller
                 ->with('error', 'Sila rekodkan kehadiran mesyuarat terlebih dahulu. Keputusan Mesyuarat dibuka selepas mesyuarat diadakan.');
         }
 
-        $mesyuarat->load('sesi');
+        $mesyuarat->load(['sesi', 'pengesahanTerkini']);
         $sesiSemasa = $surau->sesiSemasa();
-        $bolehUbahAjk = $mesyuarat->bilangan === 1 && $sesiSemasa?->id === $mesyuarat->agm_sesi_id;
+        $sesiAktif = $sesiSemasa?->id === $mesyuarat->agm_sesi_id;
+        $bolehUbahAjk = $mesyuarat->bilangan === 1 && $sesiAktif && $mesyuarat->bolehUbah('ajk');
         $surau->load(['committees', 'user']);
-        $pertukaranMenunggu = $surau->pertukaranMenunggu();
+        $ajkSesi = SurauCommittee::where('agm_sesi_id', $mesyuarat->agm_sesi_id)->orderBy('id')->get();
+        $kekurangan = $mesyuarat->bolehHantarPengesahan() ? $this->pengesahan->kekurangan($mesyuarat, $surau) : [];
 
-        return view('surau.agm.keputusan', compact('surau', 'mesyuarat', 'bolehUbahAjk', 'pertukaranMenunggu'));
+        return view('surau.agm.keputusan', compact('surau', 'mesyuarat', 'sesiAktif', 'bolehUbahAjk', 'ajkSesi', 'kekurangan'));
     }
 
     /** Muat naik minit (Bil. 1 & 2) dan laporan kewangan (Bil. 2) */
@@ -63,6 +68,12 @@ class KeputusanAgmController extends Controller
             return back()->withErrors(['fail_minit' => 'Sila pilih fail untuk dimuat naik.']);
         }
 
+        foreach (['fail_minit' => 'minit', 'fail_laporan_kewangan' => 'laporan_kewangan'] as $input => $item) {
+            if ($request->hasFile($input) && !$mesyuarat->bolehUbah($item)) {
+                return back()->withErrors([$input => 'Dokumen ini telah dihantar untuk pengesahan JAWI dan tidak boleh diganti.']);
+            }
+        }
+
         $dikemaskini = [];
         foreach (['fail_minit' => ['minit_path', 'agm_minit', 'Minit mesyuarat'], 'fail_laporan_kewangan' => ['laporan_kewangan_path', 'agm_laporan_kewangan', 'Laporan kewangan']] as $input => [$kolum, $folder, $label]) {
             if ($request->hasFile($input)) {
@@ -74,6 +85,11 @@ class KeputusanAgmController extends Controller
             }
         }
         $mesyuarat->save();
+        foreach (['fail_minit' => 'minit', 'fail_laporan_kewangan' => 'laporan_kewangan'] as $input => $item) {
+            if ($request->hasFile($input)) {
+                $mesyuarat->tandaDibetulkan($item);
+            }
+        }
 
         $senarai = implode(' dan ', $dikemaskini);
         $this->log($surau, $mesyuarat, "{$senarai} dimuat naik");
@@ -87,59 +103,40 @@ class KeputusanAgmController extends Controller
         $surau = $this->authorizeMesyuarat($mesyuarat);
         abort_unless($mesyuarat->bilangan === 1, 403, 'Pemilihan Pentadbir Surau hanya bagi Mesyuarat Bil. 1.');
 
+        if (!$mesyuarat->bolehUbah('pentadbir')) {
+            return back()->withErrors(['calon' => 'Pilihan Pentadbir Surau telah dihantar untuk pengesahan JAWI dan tidak boleh diubah.']);
+        }
+
         $request->validate(['calon' => ['required']], ['calon.required' => 'Sila pilih Pentadbir Surau.']);
 
         if ($request->input('calon') === 'KEKAL') {
-            if ($menunggu = $surau->pertukaranMenunggu()) {
-                $this->pertukaran->batal($menunggu, Auth::user());
-            }
-            $this->log($surau, $mesyuarat, 'Pentadbir Surau dikekalkan');
+            $mesyuarat->update(['pentadbir_pilihan' => 'KEKAL', 'pentadbir_calon' => null]);
+            $mesyuarat->tandaDibetulkan('pentadbir');
+            $this->log($surau, $mesyuarat, 'Pilihan Pentadbir Surau disimpan (kekal pentadbir semasa)');
 
             return redirect()->route('surau.agm.keputusan.index', $mesyuarat)
-                ->with('success', 'Pentadbir Surau semasa dikekalkan.');
+                ->with('success', 'Pilihan disimpan: Pentadbir Surau semasa dikekalkan. Hantar keputusan untuk pengesahan JAWI.');
         }
 
-        // Calon mesti ahli AJK sesi semasa surau ini
-        $ajk = $surau->committees()->whereKey((int) $request->input('calon'))->first();
+        // Calon mesti ahli AJK sesi mesyuarat ini
+        $ajk = SurauCommittee::where('surau_id', $surau->id)->where('agm_sesi_id', $mesyuarat->agm_sesi_id)
+            ->whereKey((int) $request->input('calon'))->first();
         abort_unless($ajk instanceof SurauCommittee, 422, 'Calon tidak ditemui dalam senarai AJK.');
 
         $emelCalon = strtolower(trim((string) $ajk->email));
-        if ($emelCalon !== '' && $emelCalon === strtolower((string) $surau->user?->email)) {
-            return redirect()->route('surau.agm.keputusan.index', $mesyuarat)
-                ->with('success', "{$ajk->nama} ialah Pentadbir Surau semasa. Tiada perubahan dibuat.");
+        if (!filter_var($emelCalon, FILTER_VALIDATE_EMAIL)) {
+            return back()->withErrors(['calon' => "E-mel {$ajk->nama} diperlukan untuk serah tugas Pentadbir Surau. Sila kemaskini senarai AJK terlebih dahulu."]);
+        }
+        if ($emelCalon === strtolower((string) $surau->user?->email)) {
+            return back()->withErrors(['calon' => "{$ajk->nama} ialah Pentadbir Surau semasa. Pilih \"Kekalkan pentadbir semasa\"."]);
         }
 
-        $p = $this->pertukaran->minta($surau, $ajk, Auth::user(), $mesyuarat);
+        $mesyuarat->update(['pentadbir_pilihan' => 'BAHARU', 'pentadbir_calon' => PengesahanAgmService::salinanCalon($ajk)]);
+        $mesyuarat->tandaDibetulkan('pentadbir');
+        $this->log($surau, $mesyuarat, "Pilihan Pentadbir Surau disimpan ({$ajk->nama}, {$ajk->jawatan})");
 
         return redirect()->route('surau.agm.keputusan.index', $mesyuarat)->with('success',
-            ($p->akaun_baharu
-                ? "Akaun baharu telah dicipta untuk {$p->calon_nama} dan e-mel pengaktifan dihantar ke {$p->calon_email}."
-                : "Permintaan serah tugas telah dihantar ke {$p->calon_email}. {$p->calon_nama} perlu log masuk untuk menerima.")
-            . ' Anda kekal sebagai Pentadbir Surau sehingga serah tugas diterima.');
-    }
-
-    public function hantarSemula(SurauAgmMesyuarat $mesyuarat)
-    {
-        $surau = $this->authorizeMesyuarat($mesyuarat);
-        $p = $surau->pertukaranMenunggu();
-        abort_unless($p, 404);
-
-        $this->pertukaran->hantarSemula($p);
-
-        return redirect()->route('surau.agm.keputusan.index', $mesyuarat)
-            ->with('success', "Permintaan serah tugas telah dihantar semula ke {$p->calon_email}.");
-    }
-
-    public function batal(SurauAgmMesyuarat $mesyuarat)
-    {
-        $surau = $this->authorizeMesyuarat($mesyuarat);
-        $p = $surau->pertukaranMenunggu();
-        abort_unless($p, 404);
-
-        $this->pertukaran->batal($p, Auth::user());
-
-        return redirect()->route('surau.agm.keputusan.index', $mesyuarat)
-            ->with('success', "Permintaan serah tugas kepada {$p->calon_nama} telah dibatalkan.");
+            "Pilihan disimpan: {$ajk->nama} sebagai Pentadbir Surau baharu. Serah tugas akan dihantar kepada calon selepas disahkan oleh JAWI.");
     }
 
     private function authorizeMesyuarat(SurauAgmMesyuarat $mesyuarat): Surau

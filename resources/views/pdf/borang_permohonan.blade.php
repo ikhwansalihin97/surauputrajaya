@@ -567,6 +567,10 @@
                     <td style="width: 60%; vertical-align: top;">
                         <table class="clean-table" style="width: 100%;">
                             <tr>
+                                <td style="width: 25%; vertical-align: bottom;">Tandatangan</td>
+                                <td style="width: 75%; vertical-align: bottom;">: @if(!empty($tandatanganMasjid))<img src="{{ $tandatanganMasjid }}" style="max-height: 40px; max-width: 170px; vertical-align: bottom;">@else<span style="border-bottom: 1px dotted #555; display: inline-block; width: 170px; height: 34px;">&nbsp;</span>@endif</td>
+                            </tr>
+                            <tr>
                                 <td style="width: 25%;">Nama</td>
                                 <td style="width: 75%;">: <span class="dotted-fill">{{ $masjidPegawai?->name ?? '..................................................' }}</span></td>
                             </tr>
@@ -631,6 +635,10 @@
                 <tr>
                     <td style="width: 60%; vertical-align: top;">
                         <table class="clean-table" style="width: 100%;">
+                            <tr>
+                                <td style="width: 25%; vertical-align: bottom;">Tandatangan</td>
+                                <td style="width: 75%; vertical-align: bottom;">: @if(!empty($tandatanganZon))<img src="{{ $tandatanganZon }}" style="max-height: 40px; max-width: 170px; vertical-align: bottom;">@else<span style="border-bottom: 1px dotted #555; display: inline-block; width: 170px; height: 34px;">&nbsp;</span>@endif</td>
+                            </tr>
                             <tr>
                                 <td style="width: 25%;">Nama</td>
                                 <td style="width: 75%;">: <span class="dotted-fill">{{ $zonPegawai?->name ?? '..................................................' }}</span></td>
@@ -717,7 +725,12 @@
                             Pengesahan Pegawai,
                         </div>
 
-                        <div style="margin-top: 55px; border-top: 1px solid #000; width: 280px; padding-top: 6px;">
+                        @if(!empty($tandatanganJawi))
+                            <div style="height: 55px; width: 280px; text-align: center;">
+                                <img src="{{ $tandatanganJawi }}" style="max-height: 52px; max-width: 200px;">
+                            </div>
+                        @endif
+                        <div style="margin-top: {{ empty($tandatanganJawi) ? '55px' : '0' }}; border-top: 1px solid #000; width: 280px; padding-top: 6px;">
                             ( <span style="font-weight: bold; padding: 0 10px;">{{ $jawiPegawai?->name ?? '                                                            ' }}</span> )
                         </div>
                         <div style="font-size: 9pt; color: #444; margin-top: 3px;">

@@ -40,7 +40,7 @@
             <a href="{{ route('admin.jawi.pengesahan.cetak', $application->id) }}" target="_blank" class="btn btn-primary btn-sm fw-medium shadow-sm">
                 <i class="fa-solid fa-print me-1"></i> Cetak Permohonan (PDF)
             </a>
-            <a href="{{ route('admin.permohonan.index') }}" class="btn btn-outline-secondary btn-sm fw-medium">
+            <a href="{{ route('admin.jawi.pengesahan.index') }}" class="btn btn-outline-secondary btn-sm fw-medium">
                 <i class="fa-solid fa-arrow-left me-1"></i> Kembali ke Senarai
             </a>
         </div>
